@@ -4,7 +4,7 @@ general:
 
 machine:
   pre:
-    - ./scripts/install_deps.sh
+    - ./build/install_deps.sh
   java:
     version: oraclejdk8
   environment:
