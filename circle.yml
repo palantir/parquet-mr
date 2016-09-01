@@ -6,7 +6,7 @@ machine:
   java:
     version: oraclejdk8
   post:
-    - ./build/install_deps.sh
+    - pushd parquet-mr && ./build/install_deps.sh && popd
   environment:
     TERM: dumb
 
