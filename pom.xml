@@ -77,12 +77,10 @@
     <previous.version>1.7.0</previous.version>
     <thrift.executable>thrift</thrift.executable>
     <scala.version>2.11.8</scala.version>
-    <!-- scala.binary.version is used for projects that fetch dependencies that are in scala -->
-    <scala.binary.version>2.11</scala.binary.version>
     <scala.maven.test.skip>false</scala.maven.test.skip>
     <pig.version>0.14.0</pig.version>
     <pig.classifier>h2</pig.classifier>
-    <thrift.version>0.7.0</thrift.version>
+    <thrift.version>0.9.0</thrift.version>
     <fastutil.version>6.5.7</fastutil.version>
     <semver.api.version>0.9.33</semver.api.version>
     <slf4j.version>1.7.5</slf4j.version>
@@ -508,28 +506,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-
-    <profile>
-      <id>hadoop-1</id>
-      <activation>
-        <property>
-          <name>hadoop.profile</name>
-          <value>hadoop1</value>
-        </property>
-      </activation>
-      <properties>
-        <!-- test hadoop-1 with the same jars that were produced for default profile -->
-        <maven.main.skip>true</maven.main.skip>
-        <hadoop.version>${hadoop1.version}</hadoop.version>
-        <pig.classifier/>
-      </properties>
-    </profile>
-    <profile>
-      <id>thrift9</id>
-      <properties>
-        <thrift.version>0.9.0</thrift.version>
-      </properties>
     </profile>
   </profiles>
 </project>

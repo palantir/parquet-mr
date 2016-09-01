@@ -10,9 +10,14 @@ machine:
   environment:
     TERM: dumb
 
-test:
+dependencies:
   pre:
     - ./build/mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -Dsource.skip=true
+  override:
+    - ./build/mvn depenedency:go-offline
+
+test:
+  pre:
   override:
     - ./build/mvn test -Pthrift9
 
