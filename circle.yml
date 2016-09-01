@@ -3,10 +3,10 @@ general:
     - target/
 
 machine:
-  pre:
-    - ./build/install_deps.sh
   java:
     version: oraclejdk8
+  post:
+    - ./build/install_deps.sh
   environment:
     TERM: dumb
 
