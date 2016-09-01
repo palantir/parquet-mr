@@ -9,6 +9,7 @@ machine:
     - pushd parquet-mr && ./build/install_deps.sh && popd
   environment:
     TERM: dumb
+    TEST_CODECS: gzip,snappy,uncompressed
 
 dependencies:
   pre:
@@ -17,9 +18,8 @@ dependencies:
     - ./build/mvn dependency:go-offline
 
 test:
-  pre:
   override:
-    - ./build/mvn test -Pthrift9
+    - ./build/mvn test
 
 deployment:
   release:
