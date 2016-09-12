@@ -1,12 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>16</version>
-  </parent>
-
   <groupId>org.apache.parquet</groupId>
   <artifactId>parquet</artifactId>
   <version>1.8.2-SNAPSHOT</version>
@@ -17,9 +11,9 @@
   <description>Parquet is a columnar storage format that supports nested data. This provides the java implementation.</description>
 
   <scm>
-    <connection>scm:git:git@github.com:apache/parquet-mr.git</connection>
-    <url>scm:git:git@github.com:apache/parquet-mr.git</url>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/parquet-mr.git</developerConnection>
+    <connection>scm:git:git@github.com:palantir/parquet-mr.git</connection>
+    <url>scm:git:git@github.com:palantir/parquet-mr.git</url>
+    <developerConnection>scm:git:git@github.com:palantir/parquet-mr.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
@@ -77,6 +71,8 @@
     <previous.version>1.7.0</previous.version>
     <thrift.executable>thrift</thrift.executable>
     <scala.version>2.11.8</scala.version>
+    <!-- scala.binary.version is used for projects that fetch dependencies that are in scala -->
+    <scala.binary.version>2.11</scala.binary.version>
     <scala.maven.test.skip>false</scala.maven.test.skip>
     <pig.version>0.14.0</pig.version>
     <pig.classifier>h2</pig.classifier>
