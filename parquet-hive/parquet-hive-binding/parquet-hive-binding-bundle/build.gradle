@@ -1,0 +1,9 @@
+
+description = 'Apache Parquet Hive Binding Bundle'
+dependencies {
+  compile project(':parquet-common')
+  compileOnly project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-factory')
+  compileOnly project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-interface')
+  compileOnly project(':parquet-hive:parquet-hive-binding:parquet-hive-0.10-binding')
+  compileOnly project(':parquet-hive:parquet-hive-binding:parquet-hive-0.12-binding')
+}

@@ -1,0 +1,15 @@
+
+description = 'Apache Parquet Hive Binding Factory'
+dependencies {
+  compile project(':parquet-common')
+  compile project(':parquet-hive:parquet-hive-binding:parquet-hive-0.10-binding')
+  compile project(':parquet-hive:parquet-hive-binding:parquet-hive-0.12-binding')
+  compile project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-interface')
+    testCompile group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0'
+}
+
+task packageTests(type: Jar) {
+  from sourceSets.test.output
+  classifier = 'tests'
+}
+artifacts.archives packageTests

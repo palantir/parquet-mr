@@ -433,6 +433,9 @@
             <exclude>thrift-0.7.0/**</exclude>
             <exclude>thrift-0.7.0.tar.gz</exclude>
             <exclude>**/dependency-reduced-pom.xml</exclude>
+            <exclude>gradle/wrapper/gradle-wrapper.properties</exclude>
+            <exclude>gradlew</exclude>
+            <exclude>gradlew.bat</exclude>
           </excludes>
         </configuration>
       </plugin>

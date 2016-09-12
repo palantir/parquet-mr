@@ -1,0 +1,6 @@
+
+description = 'Apache Parquet Hive Bundle'
+dependencies {
+  compile project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-bundle')
+  compile project(':parquet-hive:parquet-hive-storage-handler')
+}

@@ -1,0 +1,8 @@
+
+description = 'Apache Parquet Scala'
+dependencies {
+  compile project(':parquet-column')
+    compile group: 'org.scala-lang', name: 'scala-library', version:'2.11.8'
+    testCompile group: 'org.scalatest', name: 'scalatest_2.11', version:'2.2.1'
+    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
+}

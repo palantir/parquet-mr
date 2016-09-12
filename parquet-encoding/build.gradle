@@ -1,0 +1,13 @@
+
+description = 'Apache Parquet Encodings'
+dependencies {
+  compile project(':parquet-common')
+    compile group: 'commons-codec', name: 'commons-codec', version:'1.5'
+    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
+}
+
+task packageTests(type: Jar) {
+  from sourceSets.test.output
+  classifier = 'tests'
+}
+artifacts.archives packageTests

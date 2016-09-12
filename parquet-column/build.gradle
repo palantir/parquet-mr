@@ -1,0 +1,20 @@
+
+description = 'Apache Parquet Column'
+dependencies {
+  compile project(':parquet-common')
+  compile project(':parquet-encoding')
+    compile group: 'commons-codec', name: 'commons-codec', version:'1.5'
+    compile group: 'it.unimi.dsi', name: 'fastutil', version:'6.5.7'
+  testCompile project(':parquet-encoding')
+    testCompile group: 'com.carrotsearch', name: 'junit-benchmarks', version:'0.7.0'
+    testCompile group: 'com.h2database', name: 'h2', version:'1.3.149'
+    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
+    testCompile group: 'org.mockito', name: 'mockito-all', version:'1.9.5'
+    testCompile group: 'com.google.guava', name: 'guava', version:'11.0'
+}
+
+task packageTests(type: Jar) {
+  from sourceSets.test.output
+  classifier = 'tests'
+}
+artifacts.archives packageTests

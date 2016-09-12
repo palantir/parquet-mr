@@ -1,0 +1,32 @@
+
+description = 'Apache Parquet Cascading (for Cascading 3.0 onwards)'
+dependencies {
+  compile project(':parquet-column')
+  compile project(':parquet-hadoop')
+  compile project(':parquet-thrift')
+    compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.5'
+  testCompile project(':parquet-column')
+    testCompile group: 'org.mockito', name: 'mockito-all', version:'1.9.5'
+    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
+    compile(group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0') {
+       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
+       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
+       Please review and delete this closure when resolved. */
+    }
+    compile(group: 'org.apache.thrift', name: 'libthrift', version:'0.9.0') {
+       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
+       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
+       Please review and delete this closure when resolved. */
+    }
+    compile(group: 'cascading', name: 'cascading-hadoop', version:'3.0.3') {
+       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
+       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
+       Please review and delete this closure when resolved. */
+    }
+}
+
+task packageTests(type: Jar) {
+  from sourceSets.test.output
+  classifier = 'tests'
+}
+artifacts.archives packageTests

@@ -1,0 +1,13 @@
+
+description = 'Apache Parquet Common'
+dependencies {
+    compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.5'
+    testCompile group: 'org.semver', name: 'api', version:'0.9.33'
+    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
+}
+
+task packageTests(type: Jar) {
+  from sourceSets.test.output
+  classifier = 'tests'
+}
+artifacts.archives packageTests
