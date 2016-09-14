@@ -1,3 +1,4 @@
+apply plugin: "org.jruyi.thrift"
 
 description = 'Apache Parquet Thrift'
 dependencies {
@@ -13,27 +14,21 @@ dependencies {
     testCompile group: 'org.antlr', name: 'antlr-runtime', version:'3.4'
     testCompile group: 'org.slf4j', name: 'slf4j-log4j12', version:'1.7.5'
   testCompile project(':parquet-hadoop')
-    compile(group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0') {
-       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
-       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
-       Please review and delete this closure when resolved. */
-    }
-    compile(group: 'org.apache.pig', name: 'pig', version:'0.14.0', classifier:'h2') {
-       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
-       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
-       Please review and delete this closure when resolved. */
-    }
-    compile(group: 'joda-time', name: 'joda-time', version:'1.6') {
-       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
-       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
-       Please review and delete this closure when resolved. */
-    }
-    compile(group: 'org.apache.thrift', name: 'libthrift', version:'0.9.0') {
-       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
-       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
-       Please review and delete this closure when resolved. */
-    }
+    compileOnly(group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0')
+    compileOnly(group: 'org.apache.pig', name: 'pig', version:'0.14.0', classifier:'h2')
+    testCompile(group: 'org.apache.pig', name: 'pig', version:'0.14.0', classifier:'h2')
+    compileOnly(group: 'joda-time', name: 'joda-time', version:'1.6')
+    compileOnly(group: 'org.apache.thrift', name: 'libthrift', version:'0.9.0')
+    testCompile(group: 'org.apache.thrift', name: 'libthrift', version:'0.9.0')
+    testCompile project(':parquet-hadoop').sourceSets.test.output
+    testCompile project(':parquet-column').sourceSets.test.output
 }
+
+compileThrift {
+    sourceDir "src/test/thrift"
+}
+
+compileTestJava.source(compileThrift.outputs)
 
 task packageTests(type: Jar) {
   from sourceSets.test.output

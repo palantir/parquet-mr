@@ -7,7 +7,7 @@
     "type" : "string"
   }, {
     "name" : "string_class",
-    "type" : {"type": "string", "java-class": "java.lang.String"}
+    "type" : {"type": "string", "avro.java.string": "String"}
   }, {
     "name" : "stringable_class",
     "type" : {"type": "string", "java-class": "java.math.BigDecimal"}

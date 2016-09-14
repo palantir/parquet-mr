@@ -1,7 +1,6 @@
 rootProject.name = 'parquet'
 include ':parquet-avro'
 include ':parquet-benchmarks'
-include ':parquet-cascading'
 include ':parquet-cascading3'
 include ':parquet-column'
 include ':parquet-common'
@@ -29,7 +28,6 @@ include ':parquet-tools'
 
 project(':parquet-avro').projectDir = "$rootDir/parquet-avro" as File
 project(':parquet-benchmarks').projectDir = "$rootDir/parquet-benchmarks" as File
-project(':parquet-cascading').projectDir = "$rootDir/parquet-cascading" as File
 project(':parquet-cascading3').projectDir = "$rootDir/parquet-cascading3" as File
 project(':parquet-column').projectDir = "$rootDir/parquet-column" as File
 project(':parquet-common').projectDir = "$rootDir/parquet-common" as File

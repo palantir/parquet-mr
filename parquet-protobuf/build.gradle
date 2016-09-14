@@ -1,3 +1,4 @@
+apply plugin: 'com.google.protobuf'
 
 description = 'Apache Parquet Protobuf'
 dependencies {
@@ -8,12 +9,10 @@ dependencies {
     compile group: 'com.twitter.elephantbird', name: 'elephant-bird-core', version:'4.4'
     testCompile group: 'org.mockito', name: 'mockito-core', version:'1.9.5'
     testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
-    compile(group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0') {
-       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
-       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
-       Please review and delete this closure when resolved. */
-    }
+    //testCompile fileTree("${protobuf.generatedFilesBaseDir}/main/java")
+    compileOnly (group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0')
 }
+
 
 task packageTests(type: Jar) {
   from sourceSets.test.output

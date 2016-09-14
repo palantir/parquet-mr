@@ -1,5 +1,16 @@
 
 description = 'Apache Parquet Column'
+
+task copyFilter2(type: Copy) {
+    dependsOn ":parquet-generator:filter2Codegen"
+    from project(":parquet-generator").projectDir.getAbsolutePath() + "/filter2/src/generated"
+    into "src/main"
+}
+
+tasks.compileJava.dependsOn copyFilter2
+//tasks.eclipse.dependsOn copyVersion
+//tasks.idea.dependsOn copyVersion
+
 dependencies {
   compile project(':parquet-common')
   compile project(':parquet-encoding')
@@ -11,6 +22,7 @@ dependencies {
     testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
     testCompile group: 'org.mockito', name: 'mockito-all', version:'1.9.5'
     testCompile group: 'com.google.guava', name: 'guava', version:'11.0'
+    testCompile project(':parquet-encoding').sourceSets.test.output
 }
 
 task packageTests(type: Jar) {

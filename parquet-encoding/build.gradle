@@ -1,3 +1,12 @@
+task copyEncoding(type: Copy) {
+    dependsOn ":parquet-generator:encodingCodegen"
+    from project(":parquet-generator").projectDir.getAbsolutePath() + "/encoding/src/generated"
+    into "src/main"
+}
+
+tasks.compileJava.dependsOn copyEncoding
+//tasks.eclipse.dependsOn copyVersion
+//tasks.idea.dependsOn copyVersion
 
 description = 'Apache Parquet Encodings'
 dependencies {

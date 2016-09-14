@@ -1,2 +1,36 @@
 
 description = 'Apache Parquet Generator'
+
+def codegens = [
+    'filter2': 'org.apache.parquet.filter2.Generator',
+    'version': 'org.apache.parquet.version.Generator',
+    'encoding': 'org.apache.parquet.encoding.Generator'
+];
+
+processResources {
+    expand(version: '1.2.3', buildNumber: 'abcdef12344')
+}
+
+codegens.each { entry ->
+    def name = entry.getKey()
+    def clz = entry.getValue()
+    def taskName = "${name}Codegen"
+    def cleanName = "${name}Clean"
+    def outputPath = "${name}/src/generated/java"
+
+    task "$taskName"(type: JavaExec) {
+        dependsOn compileJava
+        main clz
+        args outputPath
+        classpath sourceSets.main.runtimeClasspath
+    }
+
+    task "$cleanName"(type: Delete) {
+        inputs.dir file('src/main/java')
+        outputs.dir outputPath
+        delete outputPath
+    }
+
+    tasks.clean.dependsOn cleanName
+}
+
