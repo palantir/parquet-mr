@@ -31,4 +31,4 @@ task generateAvroString(type: com.commercehub.gradle.plugin.avro.GenerateAvroJav
     stringType "String"
 }
 
-compileJava.source(generateAvroString.outputs)
+tasks.compileJava.source(generateAvroString.outputs)
