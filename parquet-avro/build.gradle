@@ -22,12 +22,12 @@ avro {
 
 task generateAvroIdl(type: com.commercehub.gradle.plugin.avro.GenerateAvroProtocolTask) {
     source("src/test/avro-idl")
-    outputDir = file("src/gen/avro-proto")
+    outputDir = file("src/generated/avro-proto")
 }
 
 task generateAvroString(type: com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask) {
     source(generateAvroIdl.outputs)
-    outputDir = file("src/gen/avro-java")
+    outputDir = file("src/generated/avro-java")
     stringType "String"
 }
 

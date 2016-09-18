@@ -17,7 +17,6 @@ plugins {
 }
 
 allprojects  {
-    apply plugin: 'maven'
     apply plugin: 'idea'
     apply plugin: 'eclipse'
 
@@ -39,8 +38,8 @@ subprojects {
   }
 
   dependencies {
-    testCompile group: 'junit', name: 'junit', version:'4.10'
-    testCompile group: 'org.easymock', name: 'easymock', version:'3.2'
-    testCompile group: 'commons-httpclient', name: 'commons-httpclient', version:'3.0.1'
+    testCompile 'junit:junit:4.10'
+    testCompile 'org.easymock:easymock:3.2'
+    testCompile 'commons-httpclient:commons-httpclient:3.0.1'
   }
 }
