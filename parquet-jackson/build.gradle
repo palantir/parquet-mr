@@ -1,12 +1,5 @@
-
 description = 'Apache Parquet Jackson'
 dependencies {
-    compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version:'1.9.11'
-    compile group: 'org.codehaus.jackson', name: 'jackson-core-asl', version:'1.9.11'
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.11'
+    compile 'org.codehaus.jackson:jackson-core-asl:1.9.11'
 }
-
-task packageTests(type: Jar) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-artifacts.archives packageTests

@@ -2,20 +2,12 @@ apply plugin: 'com.google.protobuf'
 
 description = 'Apache Parquet Protobuf'
 dependencies {
-    compile group: 'com.google.protobuf', name: 'protobuf-java', version:'2.5.0'
-  compile project(':parquet-common')
-  compile project(':parquet-column')
-  compile project(':parquet-hadoop')
-    compile group: 'com.twitter.elephantbird', name: 'elephant-bird-core', version:'4.4'
-    testCompile group: 'org.mockito', name: 'mockito-core', version:'1.9.5'
-    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
-    //testCompile fileTree("${protobuf.generatedFilesBaseDir}/main/java")
-    compileOnly (group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0')
+    compile 'com.google.protobuf:protobuf-java:2.5.0'
+    compile project(':parquet-common')
+    compile project(':parquet-column')
+    compile project(':parquet-hadoop')
+    compile 'com.twitter.elephantbird:elephant-bird-core:4.4'
+    compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
+    testCompile 'org.mockito:mockito-core:1.9.5'
+    testCompile 'org.slf4j:slf4j-simple:1.7.5'
 }
-
-
-task packageTests(type: Jar) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-artifacts.archives packageTests

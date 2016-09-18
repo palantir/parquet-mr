@@ -1,20 +1,9 @@
-
 description = 'Apache Parquet Tools'
 dependencies {
-    compile group: 'org.apache.parquet', name: 'parquet-format', version:'2.3.1'
-  compile project(':parquet-hadoop')
-    compile group: 'commons-cli', name: 'commons-cli', version:'1.2'
-    compile group: 'com.google.guava', name: 'guava', version:'11.0'
-    compile group: 'org.slf4j', name: 'slf4j-log4j12', version:'1.7.5'
-    compile(group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0') {
-       /* This dependency was originally in the Maven provided scope, but the project was not of type war.
-       This behavior is not yet supported by Gradle, so this dependency has been converted to a compile dependency.
-       Please review and delete this closure when resolved. */
-    }
+    compile project(':parquet-hadoop')
+    compile 'org.apache.parquet:parquet-format:2.3.1'
+    compile 'commons-cli:commons-cli:1.2'
+    compile 'com.google.guava:guava:11.0'
+    compile 'org.slf4j:slf4j-log4j12:1.7.5'
+    compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
 }
-
-task packageTests(type: Jar) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-artifacts.archives packageTests

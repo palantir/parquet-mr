@@ -1,7 +1,6 @@
-
 description = 'Apache Parquet Hadoop Bundle'
 dependencies {
-  compile project(':parquet-common')
-  compile project(':parquet-column')
-  compile project(':parquet-hadoop')
+    compile project(':parquet-common')
+    compile project(':parquet-column')
+    compile project(':parquet-hadoop')
 }

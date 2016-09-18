@@ -1,26 +1,19 @@
-
 description = 'Apache Parquet Pig'
 dependencies {
-  compile project(':parquet-column')
-  compile project(':parquet-hadoop')
-    compile group: 'org.apache.parquet', name: 'parquet-format', version:'2.3.1'
-  compile project(':parquet-jackson')
-    compile group: 'org.codehaus.jackson', name: 'jackson-mapper-asl', version:'1.9.11'
-    compile group: 'org.codehaus.jackson', name: 'jackson-core-asl', version:'1.9.11'
-  testCompile project(':parquet-column')
-    testCompile group: 'joda-time', name: 'joda-time', version:'1.6'
-    testCompile group: 'org.antlr', name: 'antlr-runtime', version:'3.4'
-    testCompile group: 'com.google.guava', name: 'guava', version:'11.0'
-    testCompile group: 'org.slf4j', name: 'slf4j-log4j12', version:'1.7.5'
-    compileOnly(group: 'org.apache.pig', name: 'pig', version:'0.14.0', classifier:'h2')
-    testCompile(group: 'org.apache.pig', name: 'pig', version:'0.14.0', classifier:'h2')
-    testCompile(group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0')
-    compileOnly(group: 'org.apache.hadoop', name: 'hadoop-client', version:'2.3.0')
+    compile project(':parquet-column')
+    compile project(':parquet-hadoop')
+    compile project(':parquet-jackson')
+    compile 'org.apache.parquet:parquet-format:2.3.1'
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.11'
+    compile 'org.codehaus.jackson:jackson-core-asl:1.9.11'
+    compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
+    compileOnly 'org.apache.pig:pig:0.14.0:h2'
+    testCompile project(':parquet-column')
     testCompile project(':parquet-column').sourceSets.test.output
+    testCompile 'joda-time:joda-time:1.6'
+    testCompile 'org.antlr:antlr-runtime:3.4'
+    testCompile 'com.google.guava:guava:11.0'
+    testCompile 'org.slf4j:slf4j-log4j12:1.7.5'
+    testCompile 'org.apache.pig:pig:0.14.0:h2'
+    testCompile 'org.apache.hadoop:hadoop-client:2.3.0'
 }
-
-task packageTests(type: Jar) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-artifacts.archives packageTests
