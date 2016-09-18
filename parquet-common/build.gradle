@@ -1,30 +1,14 @@
 description = 'Apache Parquet Common'
 
-sourceSets {
-    generated
-}
+def codeGenTask = ":parquet-generator:parquet-commonCodegen"
 
 dependencies {
-    compile files(sourceSets.generated.output.classesDir)
-    compile group: 'org.slf4j', name: 'slf4j-api', version:'1.7.5'
-    testCompile group: 'org.semver', name: 'api', version:'0.9.33'
-    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    testCompile 'org.semver:api:0.9.33'
+    testCompile 'org.slf4j:slf4j-simple:1.7.5'
 }
 
-
-task copyVersion(type: Copy) {
-    dependsOn ":parquet-generator:versionCodegen"
-    from project(":parquet-generator").projectDir.getAbsolutePath() + "/version"
-    into projectDir
-}
-
-tasks.compileGeneratedJava.dependsOn copyVersion
-tasks.compileJava.dependsOn compileGeneratedJava
-//tasks.eclipse.dependsOn copyVersion
-//tasks.idea.dependsOn copyVersion
-
-task packageTests(type: Jar) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-artifacts.archives packageTests
+tasks.compileJava.dependsOn codeGenTask
+tasks.compileJava.source(fileTree("src/generated/java"))
+tasks.eclipse.dependsOn codeGenTask
+tasks.idea.dependsOn codeGenTask

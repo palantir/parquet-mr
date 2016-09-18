@@ -1,32 +1,22 @@
-
 description = 'Apache Parquet Column'
 
-task copyFilter2(type: Copy) {
-    dependsOn ":parquet-generator:filter2Codegen"
-    from project(":parquet-generator").projectDir.getAbsolutePath() + "/filter2/src/generated"
-    into "src/main"
-}
+def codeGenTask = ":parquet-generator:parquet-columnCodegen"
 
-tasks.compileJava.dependsOn copyFilter2
-//tasks.eclipse.dependsOn copyVersion
-//tasks.idea.dependsOn copyVersion
+tasks.compileJava.dependsOn codeGenTask
+tasks.compileJava.source(fileTree("src/generated/java"))
+tasks.eclipse.dependsOn codeGenTask
+tasks.idea.dependsOn codeGenTask
 
 dependencies {
-  compile project(':parquet-common')
-  compile project(':parquet-encoding')
-    compile group: 'commons-codec', name: 'commons-codec', version:'1.5'
-    compile group: 'it.unimi.dsi', name: 'fastutil', version:'6.5.7'
-  testCompile project(':parquet-encoding')
-    testCompile group: 'com.carrotsearch', name: 'junit-benchmarks', version:'0.7.0'
-    testCompile group: 'com.h2database', name: 'h2', version:'1.3.149'
-    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
-    testCompile group: 'org.mockito', name: 'mockito-all', version:'1.9.5'
-    testCompile group: 'com.google.guava', name: 'guava', version:'11.0'
+    compile project(':parquet-common')
+    compile project(':parquet-encoding')
+    compile 'commons-codec:commons-codec:1.5'
+    compile 'it.unimi.dsi:fastutil:6.5.7'
+    testCompile project(':parquet-encoding')
+    testCompile 'com.carrotsearch:junit-benchmarks:0.7.0'
+    testCompile 'com.h2database:h2:1.3.149'
+    testCompile 'org.slf4j:slf4j-simple:1.7.5'
+    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'com.google.guava:guava:11.0'
     testCompile project(':parquet-encoding').sourceSets.test.output
 }
-
-task packageTests(type: Jar) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-artifacts.archives packageTests

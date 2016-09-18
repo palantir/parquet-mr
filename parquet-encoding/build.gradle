@@ -1,22 +1,13 @@
-task copyEncoding(type: Copy) {
-    dependsOn ":parquet-generator:encodingCodegen"
-    from project(":parquet-generator").projectDir.getAbsolutePath() + "/encoding/src/generated"
-    into "src/main"
-}
+def codeGenTask = ":parquet-generator:parquet-encodingCodegen"
 
-tasks.compileJava.dependsOn copyEncoding
-//tasks.eclipse.dependsOn copyVersion
-//tasks.idea.dependsOn copyVersion
+tasks.compileJava.dependsOn codeGenTask
+tasks.compileJava.source(fileTree("src/generated/java"))
+tasks.eclipse.dependsOn codeGenTask
+tasks.idea.dependsOn codeGenTask
 
 description = 'Apache Parquet Encodings'
 dependencies {
-  compile project(':parquet-common')
-    compile group: 'commons-codec', name: 'commons-codec', version:'1.5'
-    testCompile group: 'org.slf4j', name: 'slf4j-simple', version:'1.7.5'
+    compile project(':parquet-common')
+    compile 'commons-codec:commons-codec:1.5'
+    testCompile 'org.slf4j:slf4j-simple:1.7.5'
 }
-
-task packageTests(type: Jar) {
-  from sourceSets.test.output
-  classifier = 'tests'
-}
-artifacts.archives packageTests
