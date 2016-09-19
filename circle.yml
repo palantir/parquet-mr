@@ -4,7 +4,7 @@ general:
 
 machine:
   java:
-    version: oraclejdk7
+    version: oraclejdk8
   post:
     - pushd parquet-mr && ./build/install_deps.sh && popd
   environment:
