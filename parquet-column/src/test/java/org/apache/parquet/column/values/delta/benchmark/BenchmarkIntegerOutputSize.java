@@ -24,8 +24,10 @@ import org.apache.parquet.bytes.DirectByteBufferAllocator;
 import org.apache.parquet.column.values.delta.DeltaBinaryPackingValuesWriter;
 import org.apache.parquet.column.values.delta.DeltaBinaryPackingValuesWriterForInteger;
 import org.apache.parquet.column.values.rle.RunLengthBitPackingHybridValuesWriter;
+import org.junit.Ignore;
 import org.junit.Test;
 
+@Ignore
 public class BenchmarkIntegerOutputSize {
   public static int blockSize=128;
   public static int miniBlockNum=4;

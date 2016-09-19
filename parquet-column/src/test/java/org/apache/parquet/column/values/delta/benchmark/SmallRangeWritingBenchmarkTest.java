@@ -22,6 +22,7 @@ import com.carrotsearch.junitbenchmarks.BenchmarkOptions;
 import com.carrotsearch.junitbenchmarks.annotation.AxisRange;
 import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.apache.parquet.bytes.DirectByteBufferAllocator;
 import org.apache.parquet.column.values.ValuesWriter;
@@ -30,6 +31,7 @@ import java.util.Random;
 
 @AxisRange(min = 0, max = 2)
 @BenchmarkMethodChart(filePrefix = "benchmark-encoding-writing-random-small")
+@Ignore
 public class SmallRangeWritingBenchmarkTest extends RandomWritingBenchmarkTest {
   @BeforeClass
   public static void prepare() {
