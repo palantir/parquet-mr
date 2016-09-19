@@ -2,6 +2,12 @@ description = 'Apache Parquet Column'
 
 def codeGenTask = ":parquet-generator:parquet-columnCodegen"
 
+idea {
+    module {
+        generatedSourceDirs += file('src/generated/java')
+    }
+}
+
 tasks.compileJava.dependsOn codeGenTask
 tasks.compileJava.source(fileTree("src/generated/java"))
 tasks.eclipse.dependsOn codeGenTask

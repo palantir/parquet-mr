@@ -1,5 +1,11 @@
 def codeGenTask = ":parquet-generator:parquet-encodingCodegen"
 
+idea {
+    module {
+        generatedSourceDirs += file('src/generated/java')
+    }
+}
+
 tasks.compileJava.dependsOn codeGenTask
 tasks.compileJava.source(fileTree("src/generated/java"))
 tasks.eclipse.dependsOn codeGenTask

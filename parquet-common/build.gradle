@@ -8,6 +8,12 @@ dependencies {
     testCompile 'org.slf4j:slf4j-simple:1.7.5'
 }
 
+idea {
+    module {
+        generatedSourceDirs += file('src/generated/java')
+    }
+}
+
 tasks.compileJava.dependsOn codeGenTask
 tasks.compileJava.source(fileTree("src/generated/java"))
 tasks.eclipse.dependsOn codeGenTask

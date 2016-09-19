@@ -22,11 +22,6 @@ dependencies:
 test:
   override:
     - ./gradlew --console=plain --stacktrace --parallel build check
-  post:
-    - cp -R build/reports/* $CIRCLE_ARTIFACTS
-    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
-    - find . -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \; :
-        parallel: true
 
 deployment:
   release:
