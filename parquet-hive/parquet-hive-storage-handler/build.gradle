@@ -12,4 +12,7 @@ dependencies {
     testCompile project(':parquet-hive:parquet-hive-binding:parquet-hive-0.10-binding')
     testCompile project(':parquet-hive:parquet-hive-binding:parquet-hive-0.12-binding')
     testCompile 'commons-lang:commons-lang:2.4'
+    testCompile 'org.apache.hadoop:hadoop-client:2.3.0'
+    testCompile 'org.apache.hive:hive-serde:0.12.0'
+    testCompile 'org.apache.hive:hive-exec:0.12.0'
 }

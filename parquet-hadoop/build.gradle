@@ -8,6 +8,7 @@ dependencies {
     compile 'org.xerial.snappy:snappy-java:1.1.1.6'
     compile 'commons-pool:commons-pool:1.5.4'
     compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
+    testCompile 'org.apache.hadoop:hadoop-client:2.3.0'
     testCompile 'com.google.guava:guava:11.0'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile 'org.slf4j:slf4j-simple:1.7.5'
