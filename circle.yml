@@ -21,7 +21,7 @@ dependencies:
 
 test:
   override:
-    - ./gradlew --console=plain --stacktrace --parallel build check
+    - ./gradlew --console=plain --stacktrace build check
 
 deployment:
   release:
