@@ -17,11 +17,11 @@ checkout:
 
 dependencies:
   override:
-    - ./gradlew --console=plain --stacktrace resolveConfigurations
+    - ./gradlew --console=plain -is resolveConfigurations
 
 test:
   override:
-    - ./gradlew --console=plain --stacktrace build check
+    - ./gradlew --console=plain -is build check
 
 deployment:
   release:
