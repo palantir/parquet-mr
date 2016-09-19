@@ -11,6 +11,10 @@ machine:
     TERM: dumb
     TEST_CODECS: gzip,snappy,uncompressed
 
+checkout:
+  post:
+    - "[[ ! -s \"$(git rev-parse --git-dir)/shallow\" ]] || git fetch --unshallow"
+
 dependencies:
   override:
     - ./gradlew --console=plain --stacktrace resolveConfigurations
