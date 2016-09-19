@@ -20,7 +20,7 @@ codegens.each { entry ->
     def outputPath = "$rootDir/${name}/src/generated/java"
 
     task "$taskName"(type: JavaExec) {
-        dependsOn compileJava
+        dependsOn compileJava, cleanName
         main clz
         args outputPath
         classpath sourceSets.main.runtimeClasspath
