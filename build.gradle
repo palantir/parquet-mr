@@ -13,7 +13,8 @@ buildscript {
 
 plugins {
     id 'com.palantir.git-version' version '0.5.2'
-    id "com.jfrog.bintray" version "1.7"
+    id "com.jfrog.bintray" version '1.7'
+    id 'com.palantir.configuration-resolver' version '0.1.0'
 }
 
 allprojects  {

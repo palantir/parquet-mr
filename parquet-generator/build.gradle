@@ -6,8 +6,10 @@ def codegens = [
         'parquet-encoding': 'org.apache.parquet.encoding.Generator'
 ]
 
+def details = versionDetails()
+
 processResources {
-    expand(version: version, buildNumber: 'abcdef12344')
+    expand(version: version, buildNumber: details.gitHash)
 }
 
 codegens.each { entry ->

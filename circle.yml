@@ -1,10 +1,10 @@
 general:
   artifacts:
-    - target/
+    - build/libs
 
 machine:
   java:
-    version: oraclejdk8
+    version: oraclejdk7
   post:
     - pushd parquet-mr && ./build/install_deps.sh && popd
   environment:
@@ -12,18 +12,21 @@ machine:
     TEST_CODECS: gzip,snappy,uncompressed
 
 dependencies:
-  pre:
-    - ./build/mvn install --batch-mode -DskipTests=true -Dmaven.javadoc.skip=true -Dsource.skip=true
   override:
-    - ./build/mvn dependency:go-offline
+    - ./gradlew --console=plain --stacktrace resolveConfigurations
 
 test:
   override:
-    - ./build/mvn test
+    - ./gradlew --console=plain --stacktrace --parallel build check
+  post:
+    - cp -R build/reports/* $CIRCLE_ARTIFACTS
+    - mkdir -p $CIRCLE_TEST_REPORTS/junit/
+    - find . -regex ".*/build/test-results/.*xml" -exec cp {} $CIRCLE_TEST_REPORTS/junit/ \; :
+        parallel: true
 
 deployment:
   release:
-    tag: /[0-9]+(\.[0-9]+)+/
+    tag: /[0-9]+(?:\.[0-9]+)+-palantir[0-9]+/
     commands:
-      - ./gradlew -i bintrayUpload
+      - ./gradlew -is bintrayUpload
 
