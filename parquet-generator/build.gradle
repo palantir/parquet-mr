@@ -27,11 +27,12 @@ codegens.each { entry ->
     }
 
     task "$cleanName"(type: Delete) {
-        inputs.dir file('src/main/java')
         outputs.dir outputPath
         delete outputPath
     }
 
     tasks.clean.dependsOn cleanName
 }
+
+tasks.compileJava.dependsOn clean
 

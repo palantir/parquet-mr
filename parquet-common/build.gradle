@@ -18,6 +18,5 @@ idea {
 
 tasks.compileJava.dependsOn codeGenTask
 tasks.compileJava.source(fileTree("src/generated/java"))
-tasks.compileTestJava.source(fileTree("src/generated/java"))
 tasks.eclipse.dependsOn codeGenTask
 tasks.idea.dependsOn codeGenTask
