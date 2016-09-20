@@ -48,6 +48,7 @@ import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.ContextUtil;
 import org.apache.parquet.schema.MessageTypeParser;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -55,6 +56,7 @@ import org.junit.Test;
  * different parameters than ParquetInputFormat
  * @author Tianshuo Deng
  */
+@Ignore
 public class DeprecatedInputFormatTest {
   final Path inputPath = new Path("src/test/java/org/apache/parquet/hadoop/example/TestInputOutputFormat.java");
   Job writeJob;

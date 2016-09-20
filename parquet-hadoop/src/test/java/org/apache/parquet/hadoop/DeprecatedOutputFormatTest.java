@@ -25,6 +25,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import org.apache.parquet.example.data.Group;
@@ -41,6 +42,7 @@ import java.io.IOException;
  * different parameters than ParquetInputFormat
  * @author Tianshuo Deng
  */
+@Ignore
 public class DeprecatedOutputFormatTest {
   final Path parquetPath = new Path("target/test/example/TestInputOutputFormat/parquet");
   final Path inputPath = new Path("src/test/java/org/apache/parquet/hadoop/example/TestInputOutputFormat.java");
