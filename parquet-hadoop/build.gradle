@@ -1,4 +1,7 @@
+apply from: "${rootDir}/gradle/publish.gradle"
+
 description = 'Apache Parquet Hadoop'
+
 dependencies {
     compile project(':parquet-column')
     compile project(':parquet-jackson')

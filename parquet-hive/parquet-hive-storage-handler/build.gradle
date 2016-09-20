@@ -1,4 +1,7 @@
+apply from: "${rootDir}/gradle/publish.gradle"
+
 description = 'Apache Parquet Hive Storage Handler'
+
 dependencies {
     compile project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-bundle')
     compile project(':parquet-column')

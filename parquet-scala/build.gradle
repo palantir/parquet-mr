@@ -1,4 +1,8 @@
+apply from: "${rootDir}/gradle/publish.gradle"
+apply plugin: 'scala'
+
 description = 'Apache Parquet Scala'
+
 dependencies {
     compile project(':parquet-column')
     compile 'org.scala-lang:scala-library:2.11.8'

@@ -1,5 +1,6 @@
+apply from: "${rootDir}/gradle/publish.gradle"
 apply plugin: "scrooge-gradle"
-apply plugin: 'scala'
+apply plugin: "scala"
 apply plugin: "org.jruyi.thrift"
 
 sourceSets {
@@ -11,6 +12,7 @@ sourceSets {
 }
 
 description = 'Apache Parquet Scrooge'
+
 dependencies {
     generatedCompile "org.scala-lang:scala-library:2.11.8"
     generatedCompile 'org.apache.thrift:libthrift:0.9.0'

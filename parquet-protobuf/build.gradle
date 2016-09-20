@@ -1,6 +1,8 @@
+apply from: "${rootDir}/gradle/publish.gradle"
 apply plugin: 'com.google.protobuf'
 
 description = 'Apache Parquet Protobuf'
+
 dependencies {
     compile 'com.google.protobuf:protobuf-java:2.5.0'
     compile project(':parquet-common')

@@ -1,0 +1,52 @@
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.bintray'
+
+bintray {
+    user = System.getenv('BINTRAY_USERNAME')
+    key = System.getenv('BINTRAY_PASSWORD')
+    publish = true
+    pkg {
+        userOrg = 'palantir'
+        repo = 'releases'
+        name = 'parquet-mr'
+        licenses = ['Apache-2.0']
+        publications = ['artifactory']
+        vcsUrl = 'https://github.com/palantir/parquet-mr'
+    }
+}
+
+task sourceJar(type: Jar) {
+    from project.sourceSets.main.allSource
+    classifier 'sources'
+}
+
+task testJar(type: Jar) {
+    from project.sourceSets.test.output
+    classifier 'tests'
+}
+
+publishing {
+    publications {
+        artifactory(MavenPublication) {
+            from components.java
+            artifact(sourceJar) {
+                classifier 'sources'
+            }
+            artifact(testJar) {
+                classifier 'tests'
+            }
+        }
+    }
+}
+
+ext {
+    releaseVersionRegex = /[0-9]+(?:\.[0-9]+)+-palantir[0-9]+/
+}
+
+bintrayUpload.onlyIf {
+    System.getenv('BINTRAY_USERNAME') && System.getenv('BINTRAY_PASSWORD') && project.version ==~ releaseVersionRegex
+}
+
+bintrayUpload.dependsOn { generatePomFileForBintrayPublication }
+bintrayUpload.dependsOn { sourceJar }
+bintrayUpload.dependsOn { build }
