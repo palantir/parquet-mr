@@ -32,7 +32,8 @@ subprojects {
     targetCompatibility = 1.7
 
     test {
-        forkEvery 10
+        minHeapSize = "512m"
+        maxHeapSize = "2048m"
     }
 
     repositories {

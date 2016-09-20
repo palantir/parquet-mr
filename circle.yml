@@ -10,6 +10,7 @@ machine:
   environment:
     TERM: dumb
     TEST_CODECS: gzip,snappy,uncompressed
+    DEFAULT_JVM_OPTS: "-Xmx1024m -Xms512m"
 
 checkout:
   post:
