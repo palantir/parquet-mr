@@ -31,6 +31,10 @@ subprojects {
     sourceCompatibility = 1.7
     targetCompatibility = 1.7
 
+    test {
+        forkEvery 10
+    }
+
     repositories {
         maven { url "http://repo.maven.apache.org/maven2" }
         maven { url "http://conjars.org/repo" }
