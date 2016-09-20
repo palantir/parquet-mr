@@ -18,17 +18,24 @@
  */
 package org.apache.parquet.hadoop;
 
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.*;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.OutputCollector;
+import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.RunningJob;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
-import org.junit.Before;
-import org.junit.Test;
 import org.apache.parquet.example.data.Group;
 import org.apache.parquet.example.data.simple.SimpleGroupFactory;
 import org.apache.parquet.hadoop.api.ReadSupport;
@@ -40,12 +47,8 @@ import org.apache.parquet.hadoop.mapred.DeprecatedParquetInputFormat;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.ContextUtil;
 import org.apache.parquet.schema.MessageTypeParser;
-
-import java.io.IOException;
-
-import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Before;
+import org.junit.Test;
 
 /**
  * DeprecatedParquetInputFormat is used by cascading. It initializes the recordReader using an initialize method with
@@ -99,6 +102,7 @@ public class DeprecatedInputFormatTest {
       writeJob.submit();
       waitForJob(writeJob);
     }
+    System.err.println("wrote file");
     {
       jobConf.set(ReadSupport.PARQUET_READ_SCHEMA, readSchema);
       jobConf.set(ParquetInputFormat.READ_SUPPORT_CLASS, GroupReadSupport.class.getCanonicalName());
@@ -108,7 +112,9 @@ public class DeprecatedInputFormatTest {
       org.apache.hadoop.mapred.TextOutputFormat.setOutputPath(jobConf, outputPath);
       jobConf.setMapperClass(DeprecatedWriteMapper.class);
       jobConf.setNumReduceTasks(0);
+      System.err.println("Attempting to read file");
       mapRedJob = JobClient.runJob(jobConf);
+      System.err.println("running a job");
     }
   }
 
