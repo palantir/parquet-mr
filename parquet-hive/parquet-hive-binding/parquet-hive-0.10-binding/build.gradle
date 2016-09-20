@@ -1,4 +1,7 @@
+apply from: "${rootDir}/gradle/publish.gradle"
+
 description = 'Apache Parquet Hive 0.10 Binding'
+
 dependencies {
     compile project(':parquet-common')
     compile project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-interface')

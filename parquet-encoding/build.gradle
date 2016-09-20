@@ -1,3 +1,4 @@
+apply from: "${rootDir}/gradle/publish.gradle"
 def codeGenTask = ":parquet-generator:parquet-encodingCodegen"
 
 idea {

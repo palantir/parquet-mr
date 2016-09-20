@@ -1,4 +1,4 @@
-apply plugin: 'idea'
+apply from: "${rootDir}/gradle/publish.gradle"
 
 description = 'Apache Parquet Common'
 

@@ -1,3 +1,5 @@
+apply from: "${rootDir}/gradle/publish.gradle"
+
 description = 'Apache Parquet Column'
 
 def codeGenTask = ":parquet-generator:parquet-columnCodegen"

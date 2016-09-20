@@ -1,4 +1,7 @@
+apply from: "${rootDir}/gradle/publish.gradle"
+
 description = 'Apache Parquet Hive Binding Interface'
+
 dependencies {
     compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
 }

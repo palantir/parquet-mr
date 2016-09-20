@@ -1,4 +1,7 @@
+apply from: "${rootDir}/gradle/publish.gradle"
+
 description = 'Apache Parquet Benchmarks'
+
 dependencies {
     compile project(':parquet-encoding')
     compile project(':parquet-hadoop')
