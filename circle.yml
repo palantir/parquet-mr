@@ -9,6 +9,7 @@ machine:
     - pushd parquet-mr && ./build/install_deps.sh && popd
   environment:
     TERM: dumb
+    TEST_CODECS: gzip,snappy,uncompressed
 
 checkout:
   post:
@@ -20,7 +21,7 @@ dependencies:
 
 test:
   override:
-    - TEST_CODECS=uncompressed ./gradlew --console=plain -is build check
+    - ./gradlew --console=plain -is build check
 
 deployment:
   release:

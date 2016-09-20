@@ -66,7 +66,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 public class TestStatistics {
-  private static final int MEGABYTE = 1 << 10;
+  private static final int MEGABYTE = 1 << 20;
   private static final long RANDOM_SEED = 1441990701846L; //System.currentTimeMillis();
 
   public static class DataGenerationContext {
@@ -318,7 +318,7 @@ public class TestStatistics {
   }
 
   public static class DataContext extends DataGenerationContext.WriteContext {
-    private static final int MAX_TOTAL_ROWS = 1000000;
+    private static final int MAX_TOTAL_ROWS = 10000;
 
     private final long seed;
     private final Random random;
