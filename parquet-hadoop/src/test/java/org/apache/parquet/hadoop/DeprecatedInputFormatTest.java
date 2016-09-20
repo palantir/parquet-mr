@@ -23,8 +23,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -56,9 +56,7 @@ import org.junit.Test;
  * @author Tianshuo Deng
  */
 public class DeprecatedInputFormatTest {
-  final Path parquetPath = new Path("target/test/example/TestInputOutputFormat/parquet");
   final Path inputPath = new Path("src/test/java/org/apache/parquet/hadoop/example/TestInputOutputFormat.java");
-  final Path outputPath = new Path("target/test/example/TestInputOutputFormat/out");
   Job writeJob;
   JobConf jobConf;
   RunningJob mapRedJob;
@@ -81,18 +79,18 @@ public class DeprecatedInputFormatTest {
             "}";
   }
 
-  private void runMapReduceJob(CompressionCodecName codec) throws IOException, ClassNotFoundException, InterruptedException {
-
-    final FileSystem fileSystem = parquetPath.getFileSystem(conf);
-    fileSystem.delete(parquetPath, true);
-    fileSystem.delete(outputPath, true);
+  private void runMapReduceJob(CompressionCodecName codec, String prefix) throws IOException, ClassNotFoundException, InterruptedException {
+    java.nio.file.Path parquetPath = Files.createTempDirectory(prefix).toAbsolutePath();
+    Files.deleteIfExists(parquetPath);
+    java.nio.file.Path outputPath = Files.createTempDirectory(prefix).toAbsolutePath();
+    Files.deleteIfExists(outputPath);
     {
       writeJob = new Job(conf, "write");
       TextInputFormat.addInputPath(writeJob, inputPath);
       writeJob.setInputFormatClass(TextInputFormat.class);
       writeJob.setNumReduceTasks(0);
       ExampleOutputFormat.setCompression(writeJob, codec);
-      ExampleOutputFormat.setOutputPath(writeJob, parquetPath);
+      ExampleOutputFormat.setOutputPath(writeJob, new Path(parquetPath.toString()));
       writeJob.setOutputFormatClass(ExampleOutputFormat.class);
       writeJob.setMapperClass(ReadMapper.class);
       ExampleOutputFormat.setSchema(
@@ -107,9 +105,9 @@ public class DeprecatedInputFormatTest {
       jobConf.set(ReadSupport.PARQUET_READ_SCHEMA, readSchema);
       jobConf.set(ParquetInputFormat.READ_SUPPORT_CLASS, GroupReadSupport.class.getCanonicalName());
       jobConf.setInputFormat(MyDeprecatedInputFormat.class);
-      MyDeprecatedInputFormat.setInputPaths(jobConf, parquetPath);
+      MyDeprecatedInputFormat.setInputPaths(jobConf, new Path(parquetPath.toString()));
       jobConf.setOutputFormat(org.apache.hadoop.mapred.TextOutputFormat.class);
-      org.apache.hadoop.mapred.TextOutputFormat.setOutputPath(jobConf, outputPath);
+      org.apache.hadoop.mapred.TextOutputFormat.setOutputPath(jobConf, new Path(outputPath.toString()));
       jobConf.setMapperClass(DeprecatedWriteMapper.class);
       jobConf.setNumReduceTasks(0);
       System.err.println("Attempting to read file");
@@ -120,7 +118,7 @@ public class DeprecatedInputFormatTest {
 
   @Test
   public void testReadWriteWithCountDeprecated() throws Exception {
-    runMapReduceJob(CompressionCodecName.GZIP);
+    runMapReduceJob(CompressionCodecName.GZIP, "readwritewithcount");
     assertTrue(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytesread").getValue() > 0L);
     assertTrue(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytestotal").getValue() > 0L);
     assertTrue(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytesread").getValue()
@@ -133,7 +131,7 @@ public class DeprecatedInputFormatTest {
     jobConf.set("parquet.benchmark.time.read", "false");
     jobConf.set("parquet.benchmark.bytes.total", "false");
     jobConf.set("parquet.benchmark.bytes.read", "false");
-    runMapReduceJob(CompressionCodecName.GZIP);
+    runMapReduceJob(CompressionCodecName.GZIP, "readwritewithcount");
     assertEquals(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytesread").getValue(), 0L);
     assertEquals(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytestotal").getValue(), 0L);
     assertEquals(mapRedJob.getCounters().getGroup("parquet").getCounterForName("timeread").getValue(), 0L);
