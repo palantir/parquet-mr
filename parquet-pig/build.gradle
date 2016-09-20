@@ -1,0 +1,19 @@
+description = 'Apache Parquet Pig'
+dependencies {
+    compile project(':parquet-column')
+    compile project(':parquet-hadoop')
+    compile project(':parquet-jackson')
+    compile 'org.apache.parquet:parquet-format:2.3.1'
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.11'
+    compile 'org.codehaus.jackson:jackson-core-asl:1.9.11'
+    compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
+    compileOnly 'org.apache.pig:pig:0.14.0:h2'
+    testCompile project(':parquet-column')
+    testCompile project(':parquet-column').sourceSets.test.output
+    testCompile 'joda-time:joda-time:1.6'
+    testCompile 'org.antlr:antlr-runtime:3.4'
+    testCompile 'com.google.guava:guava:11.0'
+    testCompile 'org.slf4j:slf4j-log4j12:1.7.5'
+    testCompile 'org.apache.pig:pig:0.14.0:h2'
+    testCompile 'org.apache.hadoop:hadoop-client:2.3.0'
+}

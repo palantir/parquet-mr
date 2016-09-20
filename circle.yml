@@ -1,0 +1,31 @@
+general:
+  artifacts:
+    - build/libs
+
+machine:
+  java:
+    version: oraclejdk8
+  post:
+    - pushd parquet-mr && ./build/install_deps.sh && popd
+  environment:
+    TERM: dumb
+    TEST_CODECS: gzip,snappy,uncompressed
+
+checkout:
+  post:
+    - "[[ ! -s \"$(git rev-parse --git-dir)/shallow\" ]] || git fetch --unshallow"
+
+dependencies:
+  override:
+    - ./gradlew --console=plain -is resolveConfigurations
+
+test:
+  override:
+    - ./gradlew --console=plain -is build check
+
+deployment:
+  release:
+    tag: /[0-9]+(?:\.[0-9]+)+-palantir[0-9]+/
+    commands:
+      - ./gradlew -is bintrayUpload
+

@@ -1,0 +1,5 @@
+description = 'Apache Parquet Jackson'
+dependencies {
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.11'
+    compile 'org.codehaus.jackson:jackson-core-asl:1.9.11'
+}

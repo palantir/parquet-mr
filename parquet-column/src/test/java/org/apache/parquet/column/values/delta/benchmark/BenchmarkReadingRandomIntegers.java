@@ -30,6 +30,7 @@ import org.apache.parquet.column.values.delta.DeltaBinaryPackingValuesWriterForI
 import org.apache.parquet.column.values.rle.RunLengthBitPackingHybridValuesReader;
 import org.apache.parquet.column.values.rle.RunLengthBitPackingHybridValuesWriter;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -40,6 +41,7 @@ import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-encoding-reading-random")
+@Ignore
 public class BenchmarkReadingRandomIntegers {
   public static int blockSize = 128;
   public static int miniBlockNum = 4;

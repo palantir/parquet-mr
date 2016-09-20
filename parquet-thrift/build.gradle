@@ -1,0 +1,32 @@
+apply plugin: "org.jruyi.thrift"
+
+description = 'Apache Parquet Thrift'
+dependencies {
+    compile project(':parquet-column')
+    compile project(':parquet-hadoop')
+    compile project(':parquet-jackson')
+    compile project(':parquet-pig')
+    compile 'com.twitter.elephantbird:elephant-bird-core:4.4'
+    compile 'com.twitter.elephantbird:elephant-bird-pig:4.4'
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.11'
+    compile 'org.codehaus.jackson:jackson-core-asl:1.9.11'
+    compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
+    compileOnly 'org.apache.pig:pig:0.14.0:h2'
+    compileOnly 'org.apache.thrift:libthrift:0.9.0'
+    compileOnly 'joda-time:joda-time:1.6'
+    testCompile project(':parquet-column')
+    testCompile project(':parquet-hadoop')
+    testCompile 'org.antlr:antlr-runtime:3.4'
+    testCompile 'org.slf4j:slf4j-log4j12:1.7.5'
+    testCompile 'org.apache.pig:pig:0.14.0:h2'
+    testCompile 'org.apache.thrift:libthrift:0.9.0'
+    testCompile 'org.apache.hadoop:hadoop-client:2.3.0'
+    testCompile project(':parquet-hadoop').sourceSets.test.output
+    testCompile project(':parquet-column').sourceSets.test.output
+}
+
+compileThrift {
+    sourceDir "src/test/thrift"
+}
+
+compileTestJava.source(compileThrift.outputs)

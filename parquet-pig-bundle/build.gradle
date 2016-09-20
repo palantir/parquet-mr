@@ -1,0 +1,5 @@
+
+description = 'Apache Parquet Pig Bundle'
+dependencies {
+  compile project(':parquet-pig')
+}

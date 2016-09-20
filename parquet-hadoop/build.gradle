@@ -1,0 +1,15 @@
+description = 'Apache Parquet Hadoop'
+dependencies {
+    compile project(':parquet-column')
+    compile project(':parquet-jackson')
+    compile 'org.apache.parquet:parquet-format:2.3.1'
+    compile 'org.codehaus.jackson:jackson-mapper-asl:1.9.11'
+    compile 'org.codehaus.jackson:jackson-core-asl:1.9.11'
+    compile 'org.xerial.snappy:snappy-java:1.1.1.6'
+    compile 'commons-pool:commons-pool:1.5.4'
+    compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
+    testCompile 'org.apache.hadoop:hadoop-client:2.3.0'
+    testCompile 'com.google.guava:guava:11.0'
+    testCompile 'org.mockito:mockito-all:1.9.5'
+    testCompile 'org.slf4j:slf4j-simple:1.7.5'
+}
