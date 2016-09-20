@@ -1,19 +1,6 @@
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
-
-bintray {
-    user = System.getenv('BINTRAY_USERNAME')
-    key = System.getenv('BINTRAY_PASSWORD')
-    publish = true
-    pkg {
-        userOrg = 'palantir'
-        repo = 'releases'
-        name = 'parquet-mr'
-        licenses = ['Apache-2.0']
-        publications = ['artifactory']
-        vcsUrl = 'https://github.com/palantir/parquet-mr'
-    }
-}
+apply plugin: 'com.jfrog.artifactory'
 
 task sourceJar(type: Jar) {
     from project.sourceSets.main.allSource
@@ -25,19 +12,49 @@ task testJar(type: Jar) {
     classifier 'tests'
 }
 
+build.dependsOn 'sourceJar', 'testJar'
+
 publishing {
     publications {
-        artifactory(MavenPublication) {
+        bintray(MavenPublication) {
             from components.java
-            artifact(sourceJar) {
-                classifier 'sources'
-            }
-            artifact(testJar) {
-                classifier 'tests'
-            }
+            artifact(sourceJar)
+            artifact(testJar)
         }
     }
 }
+
+bintray {
+    user = System.getenv('BINTRAY_USERNAME')
+    key = System.getenv('BINTRAY_PASSWORD')
+    publish = true
+    pkg {
+        userOrg = 'palantir'
+        repo = 'releases'
+        name = 'parquet-mr'
+        licenses = ['Apache-2.0']
+        publications = ['bintray']
+        vcsUrl = 'https://github.com/palantir/parquet-mr'
+    }
+}
+
+artifactory {
+    publish {
+        contextUrl = 'https://oss.jfrog.org/artifactory'
+        repository {
+            repoKey = (project.version =~ /-/ ? 'oss-snapshot-local' : 'oss-release-local')
+            username = System.env.BINTRAY_USER
+            password = System.env.BINTRAY_KEY
+            maven = true
+        }
+        defaults {
+            publications (publishing.publications.bintray)
+            properties = ['git': project.version.toString()]
+        }
+    }
+}
+
+artifactoryPublish.dependsOn 'generatePomFileForBintrayPublication', 'build'
 
 ext {
     releaseVersionRegex = /[0-9]+(?:\.[0-9]+)+-palantir[0-9]+/
@@ -47,6 +64,4 @@ bintrayUpload.onlyIf {
     System.getenv('BINTRAY_USERNAME') && System.getenv('BINTRAY_PASSWORD') && project.version ==~ releaseVersionRegex
 }
 
-bintrayUpload.dependsOn { generatePomFileForBintrayPublication }
-bintrayUpload.dependsOn { sourceJar }
-bintrayUpload.dependsOn { build }
+bintrayUpload.dependsOn 'generatePomFileForBintrayPublication', 'build'
