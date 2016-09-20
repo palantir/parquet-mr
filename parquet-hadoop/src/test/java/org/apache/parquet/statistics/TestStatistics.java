@@ -66,7 +66,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 public class TestStatistics {
-  private static final int MEGABYTE = 1 << 13;
+  private static final int MEGABYTE = 1 << 10;
   private static final long RANDOM_SEED = 1441990701846L; //System.currentTimeMillis();
 
   public static class DataGenerationContext {
