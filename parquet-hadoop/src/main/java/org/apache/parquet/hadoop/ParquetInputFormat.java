@@ -133,6 +133,9 @@ public class ParquetInputFormat<T> extends FileInputFormat<Void, T> {
   public static final String DICTIONARY_FILTERING_ENABLED = "parquet.filter.dictionary.enabled";
   static final boolean DICTIONARY_FILTERING_ENABLED_DEFAULT = false;
 
+  public static final String SIGNED_ORDER_ENABLED = "parquet.strings.signed-min-max.enabled";
+  static final boolean SIGNED_ORDER_ENABLED_DEFAULT = false;
+
   /**
    * key to turn on or off task side metadata loading (default true)
    * if true then metadata is read on the task side and some tasks may finish immediately.
@@ -228,6 +231,22 @@ public class ParquetInputFormat<T> extends FileInputFormat<Void, T> {
    */
   public static Filter getFilter(Configuration conf) {
     return FilterCompat.get(getFilterPredicate(conf), getUnboundRecordFilterInstance(conf));
+  }
+
+  /**
+   * Enables using incorrect min and max that were written to the file using a
+   * signed byte array comparison. This option is safe if all of the strings in
+   * the file contain only ASCII characters, 0-127.
+   */
+  public static void enableSignedStringMinMax(Configuration conf) {
+    conf.setBoolean(SIGNED_ORDER_ENABLED, true);
+  }
+
+  /**
+   * Returns whether using signed string min and max is enabled.
+   */
+  public static boolean isSignedStringMinMaxEnabled(Configuration conf) {
+    return conf.getBoolean(SIGNED_ORDER_ENABLED, SIGNED_ORDER_ENABLED_DEFAULT);
   }
 
   private LruCache<FileStatusWrapper, FootersCacheValue> footersCache;

@@ -31,6 +31,7 @@ import static org.apache.parquet.hadoop.ParquetInputFormat.DICTIONARY_FILTERING_
 import static org.apache.parquet.hadoop.ParquetInputFormat.DICTIONARY_FILTERING_ENABLED_DEFAULT;
 import static org.apache.parquet.hadoop.ParquetInputFormat.STATS_FILTERING_ENABLED;
 import static org.apache.parquet.hadoop.ParquetInputFormat.STATS_FILTERING_ENABLED_DEFAULT;
+import static org.apache.parquet.hadoop.ParquetInputFormat.isSignedStringMinMaxEnabled;
 
 import java.io.Closeable;
 import java.io.IOException;

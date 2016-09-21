@@ -57,6 +57,7 @@ import java.util.*;
 
 import static org.apache.parquet.CorruptStatistics.shouldIgnoreStatistics;
 import static org.apache.parquet.hadoop.ParquetFileWriter.Mode.OVERWRITE;
+import static org.apache.parquet.hadoop.ParquetInputFormat.enableSignedStringMinMax;
 import static org.junit.Assert.*;
 import static org.apache.parquet.column.Encoding.BIT_PACKED;
 import static org.apache.parquet.column.Encoding.PLAIN;
@@ -452,7 +453,7 @@ public class TestParquetFileWriter {
 
     Path path = new Path(testFile.toURI());
     Configuration configuration = new Configuration();
-    configuration.set("parquet.strings.use-signed-order", "true");
+    enableSignedStringMinMax(configuration);
 
     MessageType schema = MessageTypeParser.parseMessageType("message m { required group a {required binary b;} required group c { required int64 d; }}");
     String[] path1 = {"a", "b"};
@@ -592,7 +593,7 @@ public class TestParquetFileWriter {
 
     MessageType schema = MessageTypeParser.parseMessageType(writeSchema);
     Configuration configuration = new Configuration();
-    configuration.set("parquet.strings.use-signed-order", "true");
+    enableSignedStringMinMax(configuration);
     GroupWriteSupport.setSchema(schema, configuration);
 
     ParquetWriter<Group> writer = new ParquetWriter<Group>(path, configuration, new GroupWriteSupport());

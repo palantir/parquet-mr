@@ -20,6 +20,7 @@ package org.apache.parquet.format.converter;
 
 import static org.apache.parquet.format.Util.readFileMetaData;
 import static org.apache.parquet.format.Util.writePageHeader;
+import static org.apache.parquet.hadoop.ParquetInputFormat.isSignedStringMinMaxEnabled;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -85,11 +86,15 @@ public class ParquetMetadataConverter {
   private final boolean useSignedStringMinMax;
 
   public ParquetMetadataConverter() {
-    this.useSignedStringMinMax = false;
+    this(false);
   }
 
   public ParquetMetadataConverter(Configuration conf) {
-    this.useSignedStringMinMax = conf.getBoolean("parquet.strings.use-signed-order", false);
+    this(isSignedStringMinMaxEnabled(conf));
+  }
+
+  private ParquetMetadataConverter(boolean useSignedStringMinMax) {
+    this.useSignedStringMinMax = useSignedStringMinMax;
   }
 
   // NOTE: this cache is for memory savings, not cpu savings, and is used to de-duplicate
@@ -330,14 +335,14 @@ public class ParquetMetadataConverter {
 
   // Visible for testing
   static org.apache.parquet.column.statistics.Statistics fromParquetStatisticsInternal
-      (String createdBy, Statistics statistics, PrimitiveTypeName type, SortOrder expectedOrder) {
+      (String createdBy, Statistics statistics, PrimitiveTypeName type, SortOrder typeSortOrder) {
     // create stats object based on the column type
     org.apache.parquet.column.statistics.Statistics stats = org.apache.parquet.column.statistics.Statistics.getStatsBasedOnType(type);
     // If there was no statistics written to the footer, create an empty Statistics object and return
 
     // NOTE: See docs in CorruptStatistics for explanation of why this check is needed
     if (statistics != null && !CorruptStatistics.shouldIgnoreStatistics(createdBy, type) &&
-        SortOrder.SIGNED == expectedOrder) {
+        SortOrder.SIGNED == typeSortOrder) {
       if (statistics.isSetMax() && statistics.isSetMin()) {
         stats.setMinMaxFromBytes(statistics.min.array(), statistics.max.array());
       }
@@ -359,7 +364,19 @@ public class ParquetMetadataConverter {
     UNKNOWN
   }
 
+  /**
+   * Returns whether to use signed order min and max with a type. It is safe to
+   * use signed min and max when the type is a string type and contains only
+   * ASCII characters (where the sign bit was 0). This checks whether the type
+   * is a string type and uses {@code useSignedStringMinMax} to determine if
+   * only ASCII characters were written.
+   *
+   * @param type a primitive type with a logical type annotation
+   * @return true if signed order min/max can be used with this type
+   */
   private boolean isSignedOrderOkay(PrimitiveType type) {
+    // this can't know whether it was safe to use signed order for the strings
+    // in the data, so this uses an opt-in property set by users.
     if (!useSignedStringMinMax) {
       return false;
     }
@@ -374,7 +391,6 @@ public class ParquetMetadataConverter {
     switch (type.getOriginalType()) {
       case UTF8:
       case ENUM:
-      case BSON:
       case JSON:
         return true;
       default: // includes decimal
@@ -382,6 +398,10 @@ public class ParquetMetadataConverter {
     }
   }
 
+  /**
+   * @param primitive a primitive physical type
+   * @return the default sort order used when the logical type is not known
+   */
   private static SortOrder defaultSortOrder(PrimitiveTypeName primitive) {
     switch (primitive) {
       case BOOLEAN:
@@ -389,15 +409,19 @@ public class ParquetMetadataConverter {
       case INT64:
       case FLOAT:
       case DOUBLE:
-      case BINARY: // without a logical type, signed is okay
-      case FIXED_LEN_BYTE_ARRAY:
         return SortOrder.SIGNED;
+      case BINARY:
+      case FIXED_LEN_BYTE_ARRAY:
       case INT96: // only used for timestamp, which uses unsigned values
         return SortOrder.UNSIGNED;
     }
     return SortOrder.UNKNOWN;
   }
 
+  /**
+   * @param primitive a primitive type with a logical type annotation
+   * @return the "correct" sort order of the type that applications assume
+   */
   private static SortOrder sortOrder(PrimitiveType primitive) {
     OriginalType annotation = primitive.getOriginalType();
     if (annotation != null) {

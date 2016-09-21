@@ -20,6 +20,8 @@ package org.apache.parquet.format.converter;
 
 import static java.util.Collections.emptyList;
 import static org.apache.parquet.format.converter.ParquetMetadataConverter.filterFileMetaDataByStart;
+import static org.apache.parquet.hadoop.ParquetInputFormat.enableSignedStringMinMax;
+import static org.apache.parquet.hadoop.ParquetInputFormat.isSignedStringMinMaxEnabled;
 import static org.apache.parquet.schema.MessageTypeParser.parseMessageType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -541,7 +543,7 @@ public class TestParquetMetadataConverter {
   public void testUseStatsWithSignedSortOrder() {
     // override defaults and use stats that were accumulated using signed order
     Configuration conf = new Configuration();
-    conf.set("parquet.strings.use-signed-order", "true");
+    enableSignedStringMinMax(conf);
 
     ParquetMetadataConverter converter = new ParquetMetadataConverter(conf);
     BinaryStatistics stats = new BinaryStatistics();
