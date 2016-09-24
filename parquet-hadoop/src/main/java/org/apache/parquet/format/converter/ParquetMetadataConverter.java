@@ -103,11 +103,11 @@ public class ParquetMetadataConverter {
   // an unsynchronized collection in Collections.unmodifiable*(), and making sure to not
   // keep any references to the original collection.
   private static final ConcurrentHashMap<Set<org.apache.parquet.column.Encoding>, Set<org.apache.parquet.column.Encoding>>
-      cachedEncodingSets = new ConcurrentHashMap<Set<org.apache.parquet.column.Encoding>, Set<org.apache.parquet.column.Encoding>>();
+      cachedEncodingSets = new ConcurrentHashMap<>();
 
   public FileMetaData toParquetMetadata(int currentVersion, ParquetMetadata parquetMetadata) {
     List<BlockMetaData> blocks = parquetMetadata.getBlocks();
-    List<RowGroup> rowGroups = new ArrayList<RowGroup>();
+    List<RowGroup> rowGroups = new ArrayList<>();
     long numRows = 0;
     for (BlockMetaData block : blocks) {
       numRows += block.getRowCount();
@@ -130,7 +130,7 @@ public class ParquetMetadataConverter {
 
   // Visible for testing
   List<SchemaElement> toParquetSchema(MessageType schema) {
-    List<SchemaElement> result = new ArrayList<SchemaElement>();
+    List<SchemaElement> result = new ArrayList<>();
     addToList(result, schema);
     return result;
   }
@@ -185,7 +185,7 @@ public class ParquetMetadataConverter {
   private void addRowGroup(ParquetMetadata parquetMetadata, List<RowGroup> rowGroups, BlockMetaData block) {
     //rowGroup.total_byte_size = ;
     List<ColumnChunkMetaData> columns = block.getColumns();
-    List<ColumnChunk> parquetColumns = new ArrayList<ColumnChunk>();
+    List<ColumnChunk> parquetColumns = new ArrayList<>();
     for (ColumnChunkMetaData columnMetaData : columns) {
       ColumnChunk columnChunk = new ColumnChunk(columnMetaData.getFirstDataPageOffset()); // verify this is the right offset
       columnChunk.file_path = block.getPath(); // they are in the same file for now
@@ -215,7 +215,7 @@ public class ParquetMetadataConverter {
   }
 
   private List<Encoding> toFormatEncodings(Set<org.apache.parquet.column.Encoding> encodings) {
-    List<Encoding> converted = new ArrayList<Encoding>(encodings.size());
+    List<Encoding> converted = new ArrayList<>(encodings.size());
     for (org.apache.parquet.column.Encoding encoding : encodings) {
       converted.add(getEncoding(encoding));
     }
@@ -224,7 +224,7 @@ public class ParquetMetadataConverter {
 
   // Visible for testing
   Set<org.apache.parquet.column.Encoding> fromFormatEncodings(List<Encoding> encodings) {
-    Set<org.apache.parquet.column.Encoding> converted = new HashSet<org.apache.parquet.column.Encoding>();
+    Set<org.apache.parquet.column.Encoding> converted = new HashSet<>();
 
     for (Encoding encoding : encodings) {
       converted.add(getEncoding(encoding));
@@ -283,7 +283,7 @@ public class ParquetMetadataConverter {
       return null;
     }
 
-    List<PageEncodingStats> formatStats = new ArrayList<PageEncodingStats>();
+    List<PageEncodingStats> formatStats = new ArrayList<>();
     for (org.apache.parquet.column.Encoding encoding : stats.getDictionaryEncodings()) {
       formatStats.add(new PageEncodingStats(
           PageType.DICTIONARY_PAGE, getEncoding(encoding),
@@ -613,7 +613,7 @@ public class ParquetMetadataConverter {
     fileMetaData.addToKey_value_metadata(keyValue);
   }
 
-  private static interface MetadataFilterVisitor<T, E extends Throwable> {
+  private interface MetadataFilterVisitor<T, E extends Throwable> {
     T visit(NoFilter filter) throws E;
     T visit(SkipMetadataFilter filter) throws E;
     T visit(RangeMetadataFilter filter) throws E;
@@ -636,7 +636,7 @@ public class ParquetMetadataConverter {
   }
 
   public static MetadataFilter offsets(long... offsets) {
-    Set<Long> set = new HashSet<Long>();
+    Set<Long> set = new HashSet<>();
     for (long offset : offsets) {
       set.add(offset);
     }
@@ -721,7 +721,7 @@ public class ParquetMetadataConverter {
   // Visible for testing
   static FileMetaData filterFileMetaDataByMidpoint(FileMetaData metaData, RangeMetadataFilter filter) {
     List<RowGroup> rowGroups = metaData.getRow_groups();
-    List<RowGroup> newRowGroups = new ArrayList<RowGroup>();
+    List<RowGroup> newRowGroups = new ArrayList<>();
     for (RowGroup rowGroup : rowGroups) {
       long totalSize = 0;
       long startIndex = getOffset(rowGroup.getColumns().get(0));
@@ -740,7 +740,7 @@ public class ParquetMetadataConverter {
   // Visible for testing
   static FileMetaData filterFileMetaDataByStart(FileMetaData metaData, OffsetMetadataFilter filter) {
     List<RowGroup> rowGroups = metaData.getRow_groups();
-    List<RowGroup> newRowGroups = new ArrayList<RowGroup>();
+    List<RowGroup> newRowGroups = new ArrayList<>();
     for (RowGroup rowGroup : rowGroups) {
       long startIndex = getOffset(rowGroup.getColumns().get(0));
       if (filter.contains(startIndex)) {
@@ -794,7 +794,7 @@ public class ParquetMetadataConverter {
 
   public ParquetMetadata fromParquetMetadata(FileMetaData parquetMetadata) throws IOException {
     MessageType messageType = fromParquetSchema(parquetMetadata.getSchema());
-    List<BlockMetaData> blocks = new ArrayList<BlockMetaData>();
+    List<BlockMetaData> blocks = new ArrayList<>();
     List<RowGroup> row_groups = parquetMetadata.getRow_groups();
     if (row_groups != null) {
       for (RowGroup rowGroup : row_groups) {
@@ -834,7 +834,7 @@ public class ParquetMetadataConverter {
         blocks.add(blockMetaData);
       }
     }
-    Map<String, String> keyValueMetaData = new HashMap<String, String>();
+    Map<String, String> keyValueMetaData = new HashMap<>();
     List<KeyValue> key_value_metadata = parquetMetadata.getKey_value_metadata();
     if (key_value_metadata != null) {
       for (KeyValue keyValue : key_value_metadata) {
