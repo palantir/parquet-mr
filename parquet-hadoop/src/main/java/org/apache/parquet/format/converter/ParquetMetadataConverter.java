@@ -20,6 +20,7 @@ package org.apache.parquet.format.converter;
 
 import static org.apache.parquet.format.Util.readFileMetaData;
 import static org.apache.parquet.format.Util.writePageHeader;
+import static org.apache.parquet.hadoop.ParquetInputFormat.isSignedStringMinMaxEnabled;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.CorruptStatistics;
 import org.apache.parquet.Log;
 import org.apache.parquet.format.PageEncodingStats;
@@ -81,17 +83,31 @@ public class ParquetMetadataConverter {
 
   private static final Log LOG = Log.getLog(ParquetMetadataConverter.class);
 
+  private final boolean useSignedStringMinMax;
+
+  public ParquetMetadataConverter() {
+    this(false);
+  }
+
+  public ParquetMetadataConverter(Configuration conf) {
+    this(isSignedStringMinMaxEnabled(conf));
+  }
+
+  private ParquetMetadataConverter(boolean useSignedStringMinMax) {
+    this.useSignedStringMinMax = useSignedStringMinMax;
+  }
+
   // NOTE: this cache is for memory savings, not cpu savings, and is used to de-duplicate
   // sets of encodings. It is important that all collections inserted to this cache be
   // immutable and have thread-safe read-only access. This can be achieved by wrapping
   // an unsynchronized collection in Collections.unmodifiable*(), and making sure to not
   // keep any references to the original collection.
   private static final ConcurrentHashMap<Set<org.apache.parquet.column.Encoding>, Set<org.apache.parquet.column.Encoding>>
-      cachedEncodingSets = new ConcurrentHashMap<Set<org.apache.parquet.column.Encoding>, Set<org.apache.parquet.column.Encoding>>();
+      cachedEncodingSets = new ConcurrentHashMap<>();
 
   public FileMetaData toParquetMetadata(int currentVersion, ParquetMetadata parquetMetadata) {
     List<BlockMetaData> blocks = parquetMetadata.getBlocks();
-    List<RowGroup> rowGroups = new ArrayList<RowGroup>();
+    List<RowGroup> rowGroups = new ArrayList<>();
     long numRows = 0;
     for (BlockMetaData block : blocks) {
       numRows += block.getRowCount();
@@ -114,7 +130,7 @@ public class ParquetMetadataConverter {
 
   // Visible for testing
   List<SchemaElement> toParquetSchema(MessageType schema) {
-    List<SchemaElement> result = new ArrayList<SchemaElement>();
+    List<SchemaElement> result = new ArrayList<>();
     addToList(result, schema);
     return result;
   }
@@ -169,7 +185,7 @@ public class ParquetMetadataConverter {
   private void addRowGroup(ParquetMetadata parquetMetadata, List<RowGroup> rowGroups, BlockMetaData block) {
     //rowGroup.total_byte_size = ;
     List<ColumnChunkMetaData> columns = block.getColumns();
-    List<ColumnChunk> parquetColumns = new ArrayList<ColumnChunk>();
+    List<ColumnChunk> parquetColumns = new ArrayList<>();
     for (ColumnChunkMetaData columnMetaData : columns) {
       ColumnChunk columnChunk = new ColumnChunk(columnMetaData.getFirstDataPageOffset()); // verify this is the right offset
       columnChunk.file_path = block.getPath(); // they are in the same file for now
@@ -199,7 +215,7 @@ public class ParquetMetadataConverter {
   }
 
   private List<Encoding> toFormatEncodings(Set<org.apache.parquet.column.Encoding> encodings) {
-    List<Encoding> converted = new ArrayList<Encoding>(encodings.size());
+    List<Encoding> converted = new ArrayList<>(encodings.size());
     for (org.apache.parquet.column.Encoding encoding : encodings) {
       converted.add(getEncoding(encoding));
     }
@@ -208,7 +224,7 @@ public class ParquetMetadataConverter {
 
   // Visible for testing
   Set<org.apache.parquet.column.Encoding> fromFormatEncodings(List<Encoding> encodings) {
-    Set<org.apache.parquet.column.Encoding> converted = new HashSet<org.apache.parquet.column.Encoding>();
+    Set<org.apache.parquet.column.Encoding> converted = new HashSet<>();
 
     for (Encoding encoding : encodings) {
       converted.add(getEncoding(encoding));
@@ -267,7 +283,7 @@ public class ParquetMetadataConverter {
       return null;
     }
 
-    List<PageEncodingStats> formatStats = new ArrayList<PageEncodingStats>();
+    List<PageEncodingStats> formatStats = new ArrayList<>();
     for (org.apache.parquet.column.Encoding encoding : stats.getDictionaryEncodings()) {
       formatStats.add(new PageEncodingStats(
           PageType.DICTIONARY_PAGE, getEncoding(encoding),
@@ -308,20 +324,136 @@ public class ParquetMetadataConverter {
     return fromParquetStatistics(null, statistics, type);
   }
 
+  /**
+   * @deprecated Use {@link #fromParquetStatistics(String, Statistics, PrimitiveType)} instead.
+   */
+  @Deprecated
   public static org.apache.parquet.column.statistics.Statistics fromParquetStatistics
       (String createdBy, Statistics statistics, PrimitiveTypeName type) {
+    return fromParquetStatisticsInternal(createdBy, statistics, type, defaultSortOrder(type));
+  }
+
+  // Visible for testing
+  static org.apache.parquet.column.statistics.Statistics fromParquetStatisticsInternal
+      (String createdBy, Statistics statistics, PrimitiveTypeName type, SortOrder typeSortOrder) {
     // create stats object based on the column type
     org.apache.parquet.column.statistics.Statistics stats = org.apache.parquet.column.statistics.Statistics.getStatsBasedOnType(type);
     // If there was no statistics written to the footer, create an empty Statistics object and return
 
     // NOTE: See docs in CorruptStatistics for explanation of why this check is needed
-    if (statistics != null && !CorruptStatistics.shouldIgnoreStatistics(createdBy, type)) {
+    if (statistics != null && !CorruptStatistics.shouldIgnoreStatistics(createdBy, type) &&
+        SortOrder.SIGNED == typeSortOrder) {
       if (statistics.isSetMax() && statistics.isSetMin()) {
         stats.setMinMaxFromBytes(statistics.min.array(), statistics.max.array());
       }
       stats.setNumNulls(statistics.null_count);
     }
     return stats;
+  }
+
+  public org.apache.parquet.column.statistics.Statistics fromParquetStatistics(
+      String createdBy, Statistics statistics, PrimitiveType type) {
+    SortOrder expectedOrder = isSignedOrderOkay(type) ? SortOrder.SIGNED : sortOrder(type);
+    return fromParquetStatisticsInternal(
+        createdBy, statistics, type.getPrimitiveTypeName(), expectedOrder);
+  }
+
+  enum SortOrder {
+    SIGNED,
+    UNSIGNED,
+    UNKNOWN
+  }
+
+  /**
+   * Returns whether to use signed order min and max with a type. It is safe to
+   * use signed min and max when the type is a string type and contains only
+   * ASCII characters (where the sign bit was 0). This checks whether the type
+   * is a string type and uses {@code useSignedStringMinMax} to determine if
+   * only ASCII characters were written.
+   *
+   * @param type a primitive type with a logical type annotation
+   * @return true if signed order min/max can be used with this type
+   */
+  private boolean isSignedOrderOkay(PrimitiveType type) {
+    // this can't know whether it was safe to use signed order for the strings
+    // in the data, so this uses an opt-in property set by users.
+    if (!useSignedStringMinMax) {
+      return false;
+    }
+
+    // even if the override is set, only return stats for string-ish types
+    if (type.getPrimitiveTypeName() != PrimitiveTypeName.BINARY) {
+      return false;
+    }
+    if (type.getOriginalType() == null) {
+      return true; // plain binary is okay
+    }
+    switch (type.getOriginalType()) {
+      case UTF8:
+      case ENUM:
+      case JSON:
+        return true;
+      default: // includes decimal
+        return false;
+    }
+  }
+
+  /**
+   * @param primitive a primitive physical type
+   * @return the default sort order used when the logical type is not known
+   */
+  private static SortOrder defaultSortOrder(PrimitiveTypeName primitive) {
+    switch (primitive) {
+      case BOOLEAN:
+      case INT32:
+      case INT64:
+      case FLOAT:
+      case DOUBLE:
+        return SortOrder.SIGNED;
+      case BINARY:
+      case FIXED_LEN_BYTE_ARRAY:
+      case INT96: // only used for timestamp, which uses unsigned values
+        return SortOrder.UNSIGNED;
+    }
+    return SortOrder.UNKNOWN;
+  }
+
+  /**
+   * @param primitive a primitive type with a logical type annotation
+   * @return the "correct" sort order of the type that applications assume
+   */
+  private static SortOrder sortOrder(PrimitiveType primitive) {
+    OriginalType annotation = primitive.getOriginalType();
+    if (annotation != null) {
+      switch (annotation) {
+        case INT_8:
+        case INT_16:
+        case INT_32:
+        case INT_64:
+        case DATE:
+        case TIME_MICROS:
+        case TIME_MILLIS:
+        case TIMESTAMP_MICROS:
+        case TIMESTAMP_MILLIS:
+          return SortOrder.SIGNED;
+        case UINT_8:
+        case UINT_16:
+        case UINT_32:
+        case UINT_64:
+        case DECIMAL:
+        case ENUM:
+        case UTF8:
+        case BSON:
+        case JSON:
+          return SortOrder.UNSIGNED;
+        case LIST:
+        case MAP:
+        case MAP_KEY_VALUE:
+        case INTERVAL:
+          return SortOrder.UNKNOWN;
+      }
+    }
+    return defaultSortOrder(primitive.getPrimitiveTypeName());
   }
 
   public PrimitiveTypeName getPrimitive(Type type) {
@@ -481,7 +613,7 @@ public class ParquetMetadataConverter {
     fileMetaData.addToKey_value_metadata(keyValue);
   }
 
-  private static interface MetadataFilterVisitor<T, E extends Throwable> {
+  private interface MetadataFilterVisitor<T, E extends Throwable> {
     T visit(NoFilter filter) throws E;
     T visit(SkipMetadataFilter filter) throws E;
     T visit(RangeMetadataFilter filter) throws E;
@@ -504,7 +636,7 @@ public class ParquetMetadataConverter {
   }
 
   public static MetadataFilter offsets(long... offsets) {
-    Set<Long> set = new HashSet<Long>();
+    Set<Long> set = new HashSet<>();
     for (long offset : offsets) {
       set.add(offset);
     }
@@ -589,7 +721,7 @@ public class ParquetMetadataConverter {
   // Visible for testing
   static FileMetaData filterFileMetaDataByMidpoint(FileMetaData metaData, RangeMetadataFilter filter) {
     List<RowGroup> rowGroups = metaData.getRow_groups();
-    List<RowGroup> newRowGroups = new ArrayList<RowGroup>();
+    List<RowGroup> newRowGroups = new ArrayList<>();
     for (RowGroup rowGroup : rowGroups) {
       long totalSize = 0;
       long startIndex = getOffset(rowGroup.getColumns().get(0));
@@ -608,7 +740,7 @@ public class ParquetMetadataConverter {
   // Visible for testing
   static FileMetaData filterFileMetaDataByStart(FileMetaData metaData, OffsetMetadataFilter filter) {
     List<RowGroup> rowGroups = metaData.getRow_groups();
-    List<RowGroup> newRowGroups = new ArrayList<RowGroup>();
+    List<RowGroup> newRowGroups = new ArrayList<>();
     for (RowGroup rowGroup : rowGroups) {
       long startIndex = getOffset(rowGroup.getColumns().get(0));
       if (filter.contains(startIndex)) {
@@ -662,7 +794,7 @@ public class ParquetMetadataConverter {
 
   public ParquetMetadata fromParquetMetadata(FileMetaData parquetMetadata) throws IOException {
     MessageType messageType = fromParquetSchema(parquetMetadata.getSchema());
-    List<BlockMetaData> blocks = new ArrayList<BlockMetaData>();
+    List<BlockMetaData> blocks = new ArrayList<>();
     List<RowGroup> row_groups = parquetMetadata.getRow_groups();
     if (row_groups != null) {
       for (RowGroup rowGroup : row_groups) {
@@ -687,7 +819,7 @@ public class ParquetMetadataConverter {
               fromParquetStatistics(
                   parquetMetadata.getCreated_by(),
                   metaData.statistics,
-                  messageType.getType(path.toArray()).asPrimitiveType().getPrimitiveTypeName()),
+                  messageType.getType(path.toArray()).asPrimitiveType()),
               metaData.data_page_offset,
               metaData.dictionary_page_offset,
               metaData.num_values,
@@ -702,7 +834,7 @@ public class ParquetMetadataConverter {
         blocks.add(blockMetaData);
       }
     }
-    Map<String, String> keyValueMetaData = new HashMap<String, String>();
+    Map<String, String> keyValueMetaData = new HashMap<>();
     List<KeyValue> key_value_metadata = parquetMetadata.getKey_value_metadata();
     if (key_value_metadata != null) {
       for (KeyValue keyValue : key_value_metadata) {
