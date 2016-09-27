@@ -16,6 +16,15 @@ build.dependsOn 'sourceJar', 'testJar'
 
 publishing {
     publications {
+        all {
+            pom.withXml {
+                asNode().dependencies.'*'.findAll() {
+                    it.scope.text() == 'runtime' && project.configurations.compile.allDependencies.find { dep ->
+                        dep.name == it.artifactId.text()
+                    }
+                }.each { it.scope*.value = 'compile'}
+            }
+        }
         bintray(MavenPublication) {
             from components.java
             artifact(sourceJar)
