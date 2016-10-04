@@ -18,14 +18,13 @@
  */
 package org.apache.parquet.column.statistics;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 import java.nio.ByteBuffer;
-import org.apache.parquet.io.api.Binary;
+
 import org.junit.Test;
+
+import org.apache.parquet.io.api.Binary;
 
 public class TestStatistics {
   private int[] integerArray;
