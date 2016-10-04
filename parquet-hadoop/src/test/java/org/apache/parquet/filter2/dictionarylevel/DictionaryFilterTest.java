@@ -19,6 +19,7 @@
 
 package org.apache.parquet.filter2.dictionarylevel;
 
+import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,6 +38,7 @@ import org.apache.parquet.hadoop.ParquetWriter;
 import org.apache.parquet.hadoop.example.ExampleParquetWriter;
 import org.apache.parquet.hadoop.example.GroupWriteSupport;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.MessageType;
@@ -45,6 +47,9 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -56,18 +61,30 @@ import java.util.UUID;
 import static org.apache.parquet.column.ParquetProperties.WriterVersion.PARQUET_1_0;
 import static org.apache.parquet.filter2.dictionarylevel.DictionaryFilter.canDrop;
 import static org.apache.parquet.filter2.predicate.FilterApi.*;
-import static org.apache.parquet.hadoop.metadata.CompressionCodecName.UNCOMPRESSED;
 import static org.apache.parquet.schema.MessageTypeParser.parseMessageType;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
+@RunWith(Parameterized.class)
 public class DictionaryFilterTest {
 
+  @Parameters
+  public static List<Object[]> parameters() {
+    List<Object[]> parameters = Lists.newArrayList();
+    for (CompressionCodecName codecName : compressionCodecs) {
+      Object[] param = { codecName };
+      parameters.add(param);
+    }
+    return parameters;
+  }
+
+  private static final CompressionCodecName[] compressionCodecs = {CompressionCodecName.UNCOMPRESSED,
+          CompressionCodecName.SNAPPY, CompressionCodecName.GZIP};
   private static final int nElements = 1000;
   private static final Configuration conf = new Configuration();
-  private static  Path file = new Path("target/test/TestDictionaryFilter/testParquetFile");
+  private static String filePrefix = "target/test/TestDictionaryFilter/testParquetFile";
   private static final MessageType schema = parseMessageType(
       "message test { "
           + "required binary binary_field; "
@@ -113,37 +130,47 @@ public class DictionaryFilterTest {
   @BeforeClass
   public static void prepareFile() throws IOException {
     cleanup();
-
     GroupWriteSupport.setSchema(schema, conf);
     SimpleGroupFactory f = new SimpleGroupFactory(schema);
-    ParquetWriter<Group> writer = ExampleParquetWriter.builder(file)
-        .withWriterVersion(PARQUET_1_0)
-        .withCompressionCodec(UNCOMPRESSED)
-        .withRowGroupSize(1024*1024)
-        .withPageSize(1024)
-        .enableDictionaryEncoding()
-        .withDictionaryPageSize(2*1024)
-        .withConf(conf)
-        .build();
-    writeData(f, writer);
+    for (CompressionCodecName codecName : compressionCodecs) {
+      Path file = new Path(filePrefix + codecName.getExtension());
+      ParquetWriter<Group> writer = ExampleParquetWriter.builder(file)
+              .withWriterVersion(PARQUET_1_0)
+              .withCompressionCodec(codecName)
+              .withRowGroupSize(1024*1024)
+              .withPageSize(1024)
+              .enableDictionaryEncoding()
+              .withDictionaryPageSize(2*1024)
+              .withConf(conf)
+              .build();
+      writeData(f, writer);
+    }
   }
 
   @AfterClass
   public static void cleanup() throws IOException {
-    FileSystem fs = file.getFileSystem(conf);
-    if (fs.exists(file)) {
-      fs.delete(file, true);
+    for (CompressionCodecName codecName : compressionCodecs) {
+      Path file = new Path(filePrefix + codecName.getExtension());
+      FileSystem fs = file.getFileSystem(conf);
+      if (fs.exists(file)) {
+        fs.delete(file, true);
+      }
     }
   }
 
 
   List<ColumnChunkMetaData> ccmd;
+  Path testFile;
   ParquetFileReader reader;
   DictionaryPageReadStore dictionaries;
 
+  public DictionaryFilterTest(CompressionCodecName codecName) {
+    testFile = new Path(filePrefix + codecName.getExtension());
+  }
+
   @Before
   public void setUp() throws Exception {
-    reader = ParquetFileReader.open(conf, file);
+    reader = ParquetFileReader.open(conf, testFile);
     ParquetMetadata meta = reader.getFooter();
     ccmd = meta.getBlocks().get(0).getColumns();
     dictionaries = reader.getDictionaryReader(meta.getBlocks().get(0));
