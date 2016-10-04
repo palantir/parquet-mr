@@ -18,17 +18,31 @@
  */
 package org.apache.parquet.filter2.statisticslevel;
 
+import static org.apache.parquet.filter2.predicate.FilterApi.and;
+import static org.apache.parquet.filter2.predicate.FilterApi.eq;
+import static org.apache.parquet.filter2.predicate.FilterApi.gt;
+import static org.apache.parquet.filter2.predicate.FilterApi.gtEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.lt;
+import static org.apache.parquet.filter2.predicate.FilterApi.ltEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.not;
+import static org.apache.parquet.filter2.predicate.FilterApi.notEq;
+import static org.apache.parquet.filter2.predicate.FilterApi.or;
+import static org.apache.parquet.filter2.predicate.FilterApi.userDefined;
+import static org.apache.parquet.filter2.statisticslevel.StatisticsFilter.canDrop;
+import static org.apache.parquet.io.api.Binary.fromString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-
-import org.apache.parquet.io.api.Binary;
-import org.junit.Test;
-
 import org.apache.parquet.column.Encoding;
+import org.apache.parquet.column.statistics.BinaryStatistics;
 import org.apache.parquet.column.statistics.DoubleStatistics;
 import org.apache.parquet.column.statistics.IntStatistics;
-import org.apache.parquet.hadoop.metadata.ColumnPath;
+import org.apache.parquet.filter2.predicate.FilterApi;
 import org.apache.parquet.filter2.predicate.FilterPredicate;
 import org.apache.parquet.filter2.predicate.LogicalInverseRewriter;
 import org.apache.parquet.filter2.predicate.Operators.BinaryColumn;
@@ -39,7 +53,6 @@ import org.apache.parquet.filter2.predicate.UserDefinedPredicate;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.junit.Test;
 
@@ -72,10 +85,10 @@ public class TestStatisticsFilter {
             0L, 0L, valueCount, 0L, 0L);
   }
 
-  private static final IntColumn intColumn = intColumn("int.column");
-  private static final DoubleColumn doubleColumn = doubleColumn("double.column");
-  private static final BinaryColumn missingColumn = binaryColumn("missing");
-  private static final BinaryColumn binaryColumn = binaryColumn("binary.column");
+  private static final IntColumn intColumn = FilterApi.intColumn("int.column");
+  private static final DoubleColumn doubleColumn = FilterApi.doubleColumn("double.column");
+  private static final BinaryColumn missingColumn = FilterApi.binaryColumn("missing");
+  private static final BinaryColumn binaryColumn = FilterApi.binaryColumn("binary.column");
 
   private static final IntStatistics intStats = new IntStatistics();
   private static final IntStatistics nullIntStats = new IntStatistics();
@@ -86,8 +99,8 @@ public class TestStatisticsFilter {
     intStats.setMinMax(10, 100);
     doubleStats.setMinMax(10, 100);
     // Statistics should be correct here
-    binaryStats.updateStats(Binary.fromString("b"));
-    binaryStats.updateStats(Binary.fromString("é"));
+    binaryStats.updateStats(fromString("b"));
+    binaryStats.updateStats(fromString("é"));
 
     nullIntStats.setMinMax(0, 0);
     nullIntStats.setNumNulls(177);
@@ -203,7 +216,9 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(lt(intColumn, 7), nullColumnMetas));
 
     assertTrue(canDrop(lt(missingColumn, fromString("any")), columnMetas));
+
     assertTrue(canDrop(lt(binaryColumn, fromString("b")), columnMetas));
+    assertFalse(canDrop(lt(binaryColumn, fromString("é" + 1)), columnMetas));
   }
 
   @Test
@@ -217,7 +232,9 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(ltEq(intColumn, 7), nullColumnMetas));
 
     assertTrue(canDrop(ltEq(missingColumn, fromString("any")), columnMetas));
+
     assertTrue(canDrop(ltEq(binaryColumn, fromString("a")), columnMetas));
+    assertFalse(canDrop(lt(binaryColumn, fromString("é" + 1)), columnMetas));
   }
 
   @Test
