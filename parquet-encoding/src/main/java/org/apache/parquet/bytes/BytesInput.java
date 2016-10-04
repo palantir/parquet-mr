@@ -230,6 +230,7 @@ abstract public class BytesInput {
   private static class StreamBytesInput extends BytesInput {
     private static final Log LOG = Log.getLog(BytesInput.StreamBytesInput.class);
     private final InputStream in;
+    private byte[] buf = null;
     private final int byteCount;
 
     private StreamBytesInput(InputStream in, int byteCount) {
@@ -247,8 +248,10 @@ abstract public class BytesInput {
 
     public byte[] toByteArray() throws IOException {
       if (DEBUG) LOG.debug("read all "+ byteCount + " bytes");
-      byte[] buf = new byte[byteCount];
-      new DataInputStream(in).readFully(buf);
+      if (buf == null) {
+        buf = new byte[byteCount];
+        new DataInputStream(in).readFully(buf);
+      }
       return buf;
     }
 
