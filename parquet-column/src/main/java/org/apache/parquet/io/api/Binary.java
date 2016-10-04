@@ -682,8 +682,8 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
 
   private static final int compareTwoByteArrays(byte[] array1, int offset1, int length1,
                                                 byte[] array2, int offset2, int length2) {
-    if ((array1 == null) && (array2 == null)) return 0;
-    if (array1 == array2) return 0;
+    if (array1 == null && array2 == null) return 0;
+    if (array1 == array2 && offset1 == offset2 && length1 == length2) return 0;
     int min_length = Math.min(length1, length2);
     for (int i = 0; i < min_length; i++) {
       int value1 = array1[i + offset1] & 0xFF;
