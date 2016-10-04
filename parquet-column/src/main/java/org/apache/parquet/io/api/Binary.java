@@ -18,8 +18,6 @@
  */
 package org.apache.parquet.io.api;
 
-import static org.apache.parquet.bytes.BytesUtils.UTF8;
-
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -32,8 +30,11 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+
 import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.io.ParquetEncodingException;
+
+import static org.apache.parquet.bytes.BytesUtils.UTF8;
 
 abstract public class Binary implements Comparable<Binary>, Serializable {
 
