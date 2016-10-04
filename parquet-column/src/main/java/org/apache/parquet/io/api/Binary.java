@@ -18,6 +18,8 @@
  */
 package org.apache.parquet.io.api;
 
+import static org.apache.parquet.bytes.BytesUtils.UTF8;
+
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectStreamException;
@@ -30,11 +32,8 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-
 import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.io.ParquetEncodingException;
-
-import static org.apache.parquet.bytes.BytesUtils.UTF8;
 
 abstract public class Binary implements Comparable<Binary>, Serializable {
 
@@ -668,61 +667,31 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
 
   private static final int compareByteBufferToByteArray(ByteBuffer buf, int offset1, int length1,
                                                         byte[] array, int offset2, int length2) {
-    return -1 * Binary.compareByteArrayToByteBuffer(array, offset1, length1, buf, offset2, length2);
+    return compareTwoByteArrays(buf.array(), offset1, length1, array, offset2, length2);
   }
 
   private static final int compareByteArrayToByteBuffer(byte[] array1, int offset1, int length1,
                                                         ByteBuffer buf, int offset2, int length2) {
-    if (array1 == null && buf == null) return 0;
-    int min_length = (length1 < length2) ? length1 : length2;
-    for (int i = 0; i < min_length; i++) {
-      if (array1[i + offset1] < buf.get(i + offset2)) {
-        return 1;
-      }
-      if (array1[i + offset1] > buf.get(i + offset2)) {
-        return -1;
-      }
-    }
-    // check remainder
-    if (length1 == length2) { return 0; }
-    else if (length1 < length2) { return 1;}
-    else { return -1; }
+    return compareTwoByteArrays(array1, offset1, length1, buf.array(), offset2, length2);
   }
 
   private static final int compareTwoByteBuffers(ByteBuffer buf1, int offset1, int length1,
                                                         ByteBuffer buf2, int offset2, int length2) {
-    if (buf1 == null && buf2 == null) return 0;
-    int min_length = (length1 < length2) ? length1 : length2;
-    for (int i = 0; i < min_length; i++) {
-      if (buf1.get(i + offset1) < buf2.get(i + offset2)) {
-        return 1;
-      }
-      if (buf1.get(i + offset1) > buf2.get(i + offset2)) {
-        return -1;
-      }
-    }
-    // check remainder
-    if (length1 == length2) { return 0; }
-    else if (length1 < length2) { return 1;}
-    else { return -1; }
+    return compareTwoByteArrays(buf1.array(), offset1, length1, buf2.array(), offset2, length2);
   }
 
   private static final int compareTwoByteArrays(byte[] array1, int offset1, int length1,
                                                 byte[] array2, int offset2, int length2) {
-    if (array1 == null && array2 == null) return 0;
-    if (array1 == array2 && offset1 == offset2 && length1 == length2) return 0;
-    int min_length = (length1 < length2) ? length1 : length2;
+    if ((array1 == null) && (array2 == null)) return 0;
+    if (array1 == array2) return 0;
+    int min_length = Math.min(length1, length2);
     for (int i = 0; i < min_length; i++) {
-      if (array1[i + offset1] < array2[i + offset2]) {
-        return 1;
-      }
-      if (array1[i + offset1] > array2[i + offset2]) {
-        return -1;
+      int value1 = array1[i + offset1] & 0xFF;
+      int value2 = array2[i + offset2] & 0xFF;
+      if (value1 != value2) {
+        return value2 - value1;
       }
     }
-    // check remainder
-    if (length1 == length2) { return 0; }
-    else if (length1 < length2) { return 1;}
-    else { return -1; }
+    return length2 - length1;
   }
 }

@@ -18,11 +18,11 @@
  */
 package org.apache.parquet;
 
-import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.junit.Test;
 
 public class CorruptStatisticsTest {
 
@@ -55,12 +55,12 @@ public class CorruptStatisticsTest {
     assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.6.0 (build)", PrimitiveTypeName.BINARY));
     assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version (build)", PrimitiveTypeName.BINARY));
 
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.0 (build abcd)", PrimitiveTypeName.BINARY));
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1rc3 (build abcd)", PrimitiveTypeName.BINARY));
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1rc3-SNAPSHOT (build abcd)", PrimitiveTypeName.BINARY));
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1 (build abcd)", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("imapla version 1.6.0 (build abcd)", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("imapla version 1.10.0 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.0 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1rc3 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1rc3-SNAPSHOT (build abcd)", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.9.0 (build abcd)", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 2.0.0 (build abcd)", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.9.0t-01-abcdefg (build abcd)", PrimitiveTypeName.BINARY));

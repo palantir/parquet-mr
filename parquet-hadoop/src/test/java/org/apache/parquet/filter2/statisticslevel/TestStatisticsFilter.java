@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,35 +18,8 @@
  */
 package org.apache.parquet.filter2.statisticslevel;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
-import org.apache.parquet.io.api.Binary;
-import org.junit.Test;
-
-import org.apache.parquet.column.Encoding;
-import org.apache.parquet.column.statistics.DoubleStatistics;
-import org.apache.parquet.column.statistics.IntStatistics;
-import org.apache.parquet.hadoop.metadata.ColumnPath;
-import org.apache.parquet.filter2.predicate.FilterPredicate;
-import org.apache.parquet.filter2.predicate.LogicalInverseRewriter;
-import org.apache.parquet.filter2.predicate.Operators.BinaryColumn;
-import org.apache.parquet.filter2.predicate.Operators.DoubleColumn;
-import org.apache.parquet.filter2.predicate.Operators.IntColumn;
-import org.apache.parquet.filter2.predicate.Statistics;
-import org.apache.parquet.filter2.predicate.UserDefinedPredicate;
-import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
-import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
-
-import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
-import static org.apache.parquet.io.api.Binary.fromString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.apache.parquet.filter2.predicate.FilterApi.and;
+import static org.apache.parquet.filter2.predicate.FilterApi.binaryColumn;
 import static org.apache.parquet.filter2.predicate.FilterApi.doubleColumn;
 import static org.apache.parquet.filter2.predicate.FilterApi.eq;
 import static org.apache.parquet.filter2.predicate.FilterApi.gt;
@@ -59,51 +32,91 @@ import static org.apache.parquet.filter2.predicate.FilterApi.notEq;
 import static org.apache.parquet.filter2.predicate.FilterApi.or;
 import static org.apache.parquet.filter2.predicate.FilterApi.userDefined;
 import static org.apache.parquet.filter2.statisticslevel.StatisticsFilter.canDrop;
+import static org.apache.parquet.io.api.Binary.fromString;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import org.apache.parquet.column.Encoding;
+import org.apache.parquet.column.statistics.BinaryStatistics;
+import org.apache.parquet.column.statistics.DoubleStatistics;
+import org.apache.parquet.column.statistics.IntStatistics;
+import org.apache.parquet.filter2.predicate.FilterPredicate;
+import org.apache.parquet.filter2.predicate.LogicalInverseRewriter;
+import org.apache.parquet.filter2.predicate.Operators.BinaryColumn;
+import org.apache.parquet.filter2.predicate.Operators.DoubleColumn;
+import org.apache.parquet.filter2.predicate.Operators.IntColumn;
+import org.apache.parquet.filter2.predicate.Statistics;
+import org.apache.parquet.filter2.predicate.UserDefinedPredicate;
+import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.hadoop.metadata.ColumnPath;
+import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
+import org.junit.Test;
 
 public class TestStatisticsFilter {
 
   private static ColumnChunkMetaData getIntColumnMeta(IntStatistics stats, long valueCount) {
     return ColumnChunkMetaData.get(ColumnPath.get("int", "column"),
-        PrimitiveTypeName.INT32,
-        CompressionCodecName.GZIP,
-        new HashSet<Encoding>(Arrays.asList(Encoding.PLAIN)),
-        stats,
-        0L, 0L, valueCount, 0L, 0L);
+            PrimitiveTypeName.INT32,
+            CompressionCodecName.GZIP,
+            new HashSet<Encoding>(Arrays.asList(Encoding.PLAIN)),
+            stats,
+            0L, 0L, valueCount, 0L, 0L);
   }
 
   private static ColumnChunkMetaData getDoubleColumnMeta(DoubleStatistics stats, long valueCount) {
     return ColumnChunkMetaData.get(ColumnPath.get("double", "column"),
-        PrimitiveTypeName.DOUBLE,
-        CompressionCodecName.GZIP,
-        new HashSet<Encoding>(Arrays.asList(Encoding.PLAIN)),
-        stats,
-        0L, 0L, valueCount, 0L, 0L);
+            PrimitiveTypeName.DOUBLE,
+            CompressionCodecName.GZIP,
+            new HashSet<Encoding>(Arrays.asList(Encoding.PLAIN)),
+            stats,
+            0L, 0L, valueCount, 0L, 0L);
+  }
+
+  private static ColumnChunkMetaData getBinaryColumnMeta(BinaryStatistics stats, long valueCount) {
+    return ColumnChunkMetaData.get(ColumnPath.get("binary", "column"),
+            PrimitiveTypeName.BINARY,
+            CompressionCodecName.GZIP,
+            new HashSet<Encoding>(Arrays.asList(Encoding.PLAIN)),
+            stats,
+            0L, 0L, valueCount, 0L, 0L);
   }
 
   private static final IntColumn intColumn = intColumn("int.column");
   private static final DoubleColumn doubleColumn = doubleColumn("double.column");
   private static final BinaryColumn missingColumn = binaryColumn("missing");
+  private static final BinaryColumn binaryColumn = binaryColumn("binary.column");
 
   private static final IntStatistics intStats = new IntStatistics();
   private static final IntStatistics nullIntStats = new IntStatistics();
   private static final DoubleStatistics doubleStats = new DoubleStatistics();
+  private static final BinaryStatistics binaryStats = new BinaryStatistics();
 
   static {
     intStats.setMinMax(10, 100);
     doubleStats.setMinMax(10, 100);
+    // Statistics should be correct here
+    binaryStats.updateStats(Binary.fromString("b"));
+    binaryStats.updateStats(Binary.fromString("é"));
 
     nullIntStats.setMinMax(0, 0);
     nullIntStats.setNumNulls(177);
   }
 
   private static final List<ColumnChunkMetaData> columnMetas = Arrays.asList(
-      getIntColumnMeta(intStats, 177L),
-      getDoubleColumnMeta(doubleStats, 177L));
+          getIntColumnMeta(intStats, 177L),
+          getDoubleColumnMeta(doubleStats, 177L),
+          getBinaryColumnMeta(binaryStats, 177L));
 
   private static final List<ColumnChunkMetaData> nullColumnMetas = Arrays.asList(
-      getIntColumnMeta(nullIntStats, 177L), // column of all nulls
-      getDoubleColumnMeta(doubleStats, 177L));
-
+          getIntColumnMeta(nullIntStats, 177L), // column of all nulls
+          getDoubleColumnMeta(doubleStats, 177L));
 
   @Test
   public void testEqNonNull() {
@@ -111,6 +124,8 @@ public class TestStatisticsFilter {
     assertFalse(canDrop(eq(intColumn, 10), columnMetas));
     assertFalse(canDrop(eq(intColumn, 100), columnMetas));
     assertTrue(canDrop(eq(intColumn, 101), columnMetas));
+
+    assertTrue(canDrop(eq(binaryColumn, fromString("a")), columnMetas));
 
     // drop columns of all nulls when looking for non-null value
     assertTrue(canDrop(eq(intColumn, 0), nullColumnMetas));
@@ -128,12 +143,12 @@ public class TestStatisticsFilter {
     statsSomeNulls.setNumNulls(3);
 
     assertTrue(canDrop(eq(intColumn, null), Arrays.asList(
-        getIntColumnMeta(statsNoNulls, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(statsNoNulls, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(eq(intColumn, null), Arrays.asList(
-        getIntColumnMeta(statsSomeNulls, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(statsSomeNulls, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(eq(missingColumn, null), columnMetas));
   }
@@ -148,18 +163,18 @@ public class TestStatisticsFilter {
     IntStatistics allSevens = new IntStatistics();
     allSevens.setMinMax(7, 7);
     assertTrue(canDrop(notEq(intColumn, 7), Arrays.asList(
-        getIntColumnMeta(allSevens, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(allSevens, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     allSevens.setNumNulls(100L);
     assertFalse(canDrop(notEq(intColumn, 7), Arrays.asList(
-        getIntColumnMeta(allSevens, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(allSevens, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     allSevens.setNumNulls(177L);
     assertFalse(canDrop(notEq(intColumn, 7), Arrays.asList(
-        getIntColumnMeta(allSevens, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(allSevens, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(notEq(missingColumn, fromString("any")), columnMetas));
   }
@@ -179,16 +194,16 @@ public class TestStatisticsFilter {
     statsAllNulls.setNumNulls(177);
 
     assertFalse(canDrop(notEq(intColumn, null), Arrays.asList(
-        getIntColumnMeta(statsNoNulls, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(statsNoNulls, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(notEq(intColumn, null), Arrays.asList(
-        getIntColumnMeta(statsSomeNulls, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(statsSomeNulls, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertTrue(canDrop(notEq(intColumn, null), Arrays.asList(
-        getIntColumnMeta(statsAllNulls, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(statsAllNulls, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertTrue(canDrop(notEq(missingColumn, null), columnMetas));
   }
@@ -204,6 +219,7 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(lt(intColumn, 7), nullColumnMetas));
 
     assertTrue(canDrop(lt(missingColumn, fromString("any")), columnMetas));
+    assertTrue(canDrop(lt(binaryColumn, fromString("b")), columnMetas));
   }
 
   @Test
@@ -217,6 +233,7 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(ltEq(intColumn, 7), nullColumnMetas));
 
     assertTrue(canDrop(ltEq(missingColumn, fromString("any")), columnMetas));
+    assertTrue(canDrop(ltEq(binaryColumn, fromString("a")), columnMetas));
   }
 
   @Test
@@ -230,6 +247,9 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(gt(intColumn, 7), nullColumnMetas));
 
     assertTrue(canDrop(gt(missingColumn, fromString("any")), columnMetas));
+
+    assertFalse(canDrop(gt(binaryColumn, fromString("b")), columnMetas));
+    assertTrue(canDrop(gt(binaryColumn, fromString("é")), columnMetas));
   }
 
   @Test
@@ -243,6 +263,10 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(gtEq(intColumn, 7), nullColumnMetas));
 
     assertTrue(canDrop(gtEq(missingColumn, fromString("any")), columnMetas));
+
+    // "binary.column >= b" can rule out b
+    assertFalse(canDrop(gtEq(binaryColumn, fromString("b")), columnMetas));
+    assertTrue(canDrop(gtEq(binaryColumn, fromString("é" + 1)), columnMetas));
   }
 
   @Test
@@ -298,35 +322,35 @@ public class TestStatisticsFilter {
     neither.setMinMax(1 , 2);
 
     assertTrue(canDrop(pred, Arrays.asList(
-        getIntColumnMeta(seven, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(seven, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(pred, Arrays.asList(
-        getIntColumnMeta(eight, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(eight, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(pred, Arrays.asList(
-        getIntColumnMeta(neither, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(neither, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(invPred, Arrays.asList(
-        getIntColumnMeta(seven, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(seven, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertTrue(canDrop(invPred, Arrays.asList(
-        getIntColumnMeta(eight, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(eight, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
 
     assertFalse(canDrop(invPred, Arrays.asList(
-        getIntColumnMeta(neither, 177L),
-        getDoubleColumnMeta(doubleStats, 177L))));
+            getIntColumnMeta(neither, 177L),
+            getDoubleColumnMeta(doubleStats, 177L))));
   }
 
   @Test
   public void testClearExceptionForNots() {
     List<ColumnChunkMetaData> columnMetas = Arrays.asList(
-        getDoubleColumnMeta(new DoubleStatistics(), 0L),
-        getIntColumnMeta(new IntStatistics(), 0L));
+            getDoubleColumnMeta(new DoubleStatistics(), 0L),
+            getIntColumnMeta(new IntStatistics(), 0L));
 
     FilterPredicate pred = and(not(eq(doubleColumn, 12.0)), eq(intColumn, 17));
 
@@ -335,7 +359,7 @@ public class TestStatisticsFilter {
       fail("This should throw");
     } catch (IllegalArgumentException e) {
       assertEquals("This predicate contains a not! Did you forget to run this predicate through LogicalInverseRewriter?"
-          + " not(eq(double.column, 12.0))", e.getMessage());
+              + " not(eq(double.column, 12.0))", e.getMessage());
     }
   }
 

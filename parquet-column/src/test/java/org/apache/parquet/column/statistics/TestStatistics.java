@@ -18,13 +18,14 @@
  */
 package org.apache.parquet.column.statistics;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
-
-import org.junit.Test;
-
 import org.apache.parquet.io.api.Binary;
+import org.junit.Test;
 
 public class TestStatistics {
   private int[] integerArray;
@@ -381,6 +382,19 @@ public class TestStatistics {
 
     // Test print formatting
     assertEquals(stats.toString(), "min: a, max: world, num_nulls: 0");
+  }
+
+  @Test
+  public void testBinaryMinMaxUtf8() {
+    stringArray = new String[]{"é", "a", "b", "c"};
+    BinaryStatistics stats = new BinaryStatistics();
+
+    for (String s : stringArray) {
+      stats.updateStats(Binary.fromString(s));
+    }
+
+    assertEquals(stats.genericGetMax(), Binary.fromString("é"));
+    assertEquals(stats.genericGetMin(), Binary.fromString("a"));
   }
 
   @Test
