@@ -219,7 +219,9 @@ public class TestStatisticsFilter {
 
     assertTrue(canDrop(lt(missingColumn, fromString("any")), columnMetas));
 
+    assertTrue(canDrop(lt(binaryColumn, fromString("a")), columnMetas));
     assertTrue(canDrop(lt(binaryColumn, fromString("b")), columnMetas));
+    assertFalse(canDrop(lt(binaryColumn, fromString("é")), columnMetas));
     assertFalse(canDrop(lt(binaryColumn, fromString("é" + 1)), columnMetas));
   }
 
@@ -236,7 +238,9 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(ltEq(missingColumn, fromString("any")), columnMetas));
 
     assertTrue(canDrop(ltEq(binaryColumn, fromString("a")), columnMetas));
-    assertFalse(canDrop(lt(binaryColumn, fromString("é" + 1)), columnMetas));
+    assertFalse(canDrop(ltEq(binaryColumn, fromString("b")), columnMetas));
+    assertFalse(canDrop(ltEq(binaryColumn, fromString("é")), columnMetas));
+    assertFalse(canDrop(ltEq(binaryColumn, fromString("é" + 1)), columnMetas));
   }
 
   @Test
@@ -251,8 +255,10 @@ public class TestStatisticsFilter {
 
     assertTrue(canDrop(gt(missingColumn, fromString("any")), columnMetas));
 
+    assertFalse(canDrop(gt(binaryColumn, fromString("a")), columnMetas));
     assertFalse(canDrop(gt(binaryColumn, fromString("b")), columnMetas));
     assertTrue(canDrop(gt(binaryColumn, fromString("é")), columnMetas));
+    assertTrue(canDrop(gt(binaryColumn, fromString("é" + 1)), columnMetas));
   }
 
   @Test
@@ -268,7 +274,9 @@ public class TestStatisticsFilter {
     assertTrue(canDrop(gtEq(missingColumn, fromString("any")), columnMetas));
 
     // "binary.column >= b" can rule out b
+    assertFalse(canDrop(gtEq(binaryColumn, fromString("a")), columnMetas));
     assertFalse(canDrop(gtEq(binaryColumn, fromString("b")), columnMetas));
+    assertFalse(canDrop(gtEq(binaryColumn, fromString("é")), columnMetas));
     assertTrue(canDrop(gtEq(binaryColumn, fromString("é" + 1)), columnMetas));
   }
 
