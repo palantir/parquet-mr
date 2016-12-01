@@ -21,6 +21,7 @@ package org.apache.parquet.filter2.dictionarylevel;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -371,30 +372,34 @@ public class DictionaryFilterTest {
     InInt32UDP udp1 = new InInt32UDP(ImmutableSet.of(205));
 
     assertTrue("Should drop block for non-matching UDP",
-      canDrop(FilterApi.userDefined(intColumn("int32_field"), udp)
-        , ccmd, dictionaries));
+      canDrop(FilterApi.userDefined(intColumn("int32_field"), udp), ccmd, dictionaries));
 
     assertFalse("Should not drop block for matching UDP",
-      canDrop(FilterApi.userDefined(intColumn("int32_field"), udp1)
-        , ccmd, dictionaries));
+      canDrop(FilterApi.userDefined(intColumn("int32_field"), udp1), ccmd, dictionaries));
   }
 
   @Test
   public void testInverseUdp() throws Exception {
     InInt32UDP udp = new InInt32UDP(ImmutableSet.of(42));
     InInt32UDP udp1 = new InInt32UDP(ImmutableSet.of(205));
+    Set<Integer> allValues = ImmutableSet.copyOf(Arrays.asList(ArrayUtils.toObject(intValues)));
+    InInt32UDP udp2 = new InInt32UDP(allValues);
+
     FilterPredicate inverse =
       LogicalInverseRewriter.rewrite(FilterApi.not(FilterApi.userDefined(intColumn("int32_field"), udp)));
     FilterPredicate inverse1 =
       LogicalInverseRewriter.rewrite(FilterApi.not(FilterApi.userDefined(intColumn("int32_field"), udp1)));
+    FilterPredicate inverse2 =
+      LogicalInverseRewriter.rewrite(FilterApi.not(FilterApi.userDefined(intColumn("int32_field"), udp2)));
 
     assertFalse("Should not drop block for inverse of non-matching UDP",
-      canDrop(inverse
-        , ccmd, dictionaries));
+      canDrop(inverse, ccmd, dictionaries));
 
-    assertTrue("Should drop block for inverse of matching UDP",
-      canDrop(inverse1
-        , ccmd, dictionaries));
+    assertFalse("Should not drop block for inverse of UDP with some matches",
+      canDrop(inverse1, ccmd, dictionaries));
+
+    assertTrue("Should drop block for inverse of UDP with all matches",
+      canDrop(inverse2, ccmd, dictionaries));
   }
 
   @Test

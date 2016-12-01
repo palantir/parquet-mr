@@ -377,12 +377,24 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
         return BLOCK_MIGHT_MATCH;
       }
 
+      boolean allMatch = true;
       for(T entry : dictSet) {
         if (ud.getUserDefinedPredicate().keep(entry)) {
-          return inverted ? BLOCK_CANNOT_MATCH : BLOCK_MIGHT_MATCH;
+          if (!inverted) {
+            return BLOCK_MIGHT_MATCH;
+          }
+        } else {
+          allMatch = false;
         }
       }
-      return inverted ? BLOCK_MIGHT_MATCH : BLOCK_CANNOT_MATCH;
+
+      if (inverted && allMatch) {
+        return BLOCK_CANNOT_MATCH;
+      } else if (inverted) {
+        return BLOCK_MIGHT_MATCH;
+      } else {
+        return BLOCK_CANNOT_MATCH;
+      }
     } catch (IOException e) {
       LOG.warn("Failed to process dictionary for filter evaluation.", e);
     }
