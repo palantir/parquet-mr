@@ -514,6 +514,10 @@ public class ParquetFileReader implements Closeable {
     return new ParquetFileReader(conf, file, footer);
   }
 
+  public static ParquetFileReader open(Configuration conf, FileStatus file, ParquetMetadata footer) throws IOException {
+    return new ParquetFileReader(conf, file, footer);
+  }
+
   private final CodecFactory codecFactory;
   private final SeekableInputStream f;
   private final FileStatus fileStatus;
@@ -611,6 +615,30 @@ public class ParquetFileReader implements Closeable {
     FileSystem fs = file.getFileSystem(conf);
     this.fileStatus = fs.getFileStatus(file);
     this.f = HadoopStreams.wrap(fs.open(file));
+    this.footer = footer;
+    this.fileMetaData = footer.getFileMetaData();
+    this.blocks = footer.getBlocks();
+    for (ColumnDescriptor col : footer.getFileMetaData().getSchema().getColumns()) {
+      paths.put(ColumnPath.get(col.getPath()), col);
+    }
+    // the page size parameter isn't meaningful when only using
+    // the codec factory to get decompressors
+    this.codecFactory = new CodecFactory(conf, 0);
+    this.allocator = new HeapByteBufferAllocator();
+  }
+
+  /**
+   * @param conf the Hadoop Configuration
+   * @param fileStatus FileStatus of a parquet file
+   * @param footer a {@link ParquetMetadata} footer already read from the file
+   * @throws IOException if the file can not be opened
+   */
+  public ParquetFileReader(Configuration conf, FileStatus fileStatus, ParquetMetadata footer) throws IOException {
+    this.converter = new ParquetMetadataConverter(conf);
+    this.conf = conf;
+    FileSystem fs = fileStatus.getPath().getFileSystem(conf);
+    this.fileStatus = fileStatus;
+    this.f = HadoopStreams.wrap(fs.open(fileStatus.getPath()));
     this.footer = footer;
     this.fileMetaData = footer.getFileMetaData();
     this.blocks = footer.getBlocks();
