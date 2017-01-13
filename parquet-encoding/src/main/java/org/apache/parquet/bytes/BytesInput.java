@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,7 +29,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.WritableByteChannel;
 
-import org.apache.parquet.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -44,7 +45,7 @@ import org.apache.parquet.Log;
  *
  */
 abstract public class BytesInput {
-  private static final Log LOG = Log.getLog(BytesInput.class);
+  private static final Logger LOG = LoggerFactory.getLogger(BytesInput.class);
   private static final boolean DEBUG = false;//Log.DEBUG;
   private static final EmptyBytesInput EMPTY_BYTES_INPUT = new EmptyBytesInput();
 
@@ -74,7 +75,7 @@ abstract public class BytesInput {
   public static BytesInput from(InputStream in, int bytes) {
     return new StreamBytesInput(in, bytes);
   }
-  
+
   /**
    * @param buffer
    * @param length number of bytes to read
@@ -90,12 +91,12 @@ abstract public class BytesInput {
    * @return a Bytes input that will write the given bytes
    */
   public static BytesInput from(byte[] in) {
-    if (DEBUG) LOG.debug("BytesInput from array of " + in.length + " bytes");
+    LOG.debug("BytesInput from array of {} bytes", in.length);
     return new ByteArrayBytesInput(in, 0 , in.length);
   }
 
   public static BytesInput from(byte[] in, int offset, int length) {
-    if (DEBUG) LOG.debug("BytesInput from array of " + length + " bytes");
+    LOG.debug("BytesInput from array of {} bytes", length);
     return new ByteArrayBytesInput(in, offset, length);
   }
 
@@ -189,7 +190,7 @@ abstract public class BytesInput {
   public byte[] toByteArray() throws IOException {
     BAOS baos = new BAOS((int)size());
     this.writeAllTo(baos);
-    if (DEBUG) LOG.debug("converted " + size() + " to byteArray of " + baos.size() + " bytes");
+    LOG.debug("converted {} to byteArray of {} bytes", size() , baos.size());
     return baos.getBuf();
   }
 
@@ -228,7 +229,7 @@ abstract public class BytesInput {
   }
 
   private static class StreamBytesInput extends BytesInput {
-    private static final Log LOG = Log.getLog(BytesInput.StreamBytesInput.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BytesInput.StreamBytesInput.class);
     private final InputStream in;
     private byte[] buf = null;
     private final int byteCount;
@@ -241,17 +242,15 @@ abstract public class BytesInput {
 
     @Override
     public void writeAllTo(OutputStream out) throws IOException {
-      if (DEBUG) LOG.debug("write All "+ byteCount + " bytes");
+      LOG.debug("write All {} bytes", byteCount);
       // TODO: more efficient
       out.write(this.toByteArray());
     }
 
     public byte[] toByteArray() throws IOException {
-      if (DEBUG) LOG.debug("read all "+ byteCount + " bytes");
-      if (buf == null) {
-        buf = new byte[byteCount];
-        new DataInputStream(in).readFully(buf);
-      }
+      LOG.debug("read all {} bytes", byteCount);
+      byte[] buf = new byte[byteCount];
+      new DataInputStream(in).readFully(buf);
       return buf;
     }
 
@@ -263,7 +262,7 @@ abstract public class BytesInput {
   }
 
   private static class SequenceBytesIn extends BytesInput {
-    private static final Log LOG = Log.getLog(BytesInput.SequenceBytesIn.class);
+    private static final Logger LOG = LoggerFactory.getLogger(BytesInput.SequenceBytesIn.class);
 
     private final List<BytesInput> inputs;
     private final long size;
@@ -281,10 +280,11 @@ abstract public class BytesInput {
     @Override
     public void writeAllTo(OutputStream out) throws IOException {
       for (BytesInput input : inputs) {
-        if (DEBUG) LOG.debug("write " + input.size() + " bytes to out");
-        if (DEBUG && input instanceof SequenceBytesIn) LOG.debug("{");
+
+        LOG.debug("write {} bytes to out", input.size());
+        if (input instanceof SequenceBytesIn) LOG.debug("{");
         input.writeAllTo(out);
-        if (DEBUG && input instanceof SequenceBytesIn) LOG.debug("}");
+        if (input instanceof SequenceBytesIn) LOG.debug("}");
       }
     }
 
@@ -449,9 +449,9 @@ abstract public class BytesInput {
     }
 
   }
-  
+
   private static class ByteBufferBytesInput extends BytesInput {
-    
+
     private final ByteBuffer byteBuf;
     private final int length;
     private final int offset;
@@ -470,7 +470,7 @@ abstract public class BytesInput {
       tempBuf.limit(length);
       outputChannel.write(tempBuf);
     }
-    
+
     @Override
     public ByteBuffer toByteBuffer() throws IOException {
       byteBuf.position(offset);

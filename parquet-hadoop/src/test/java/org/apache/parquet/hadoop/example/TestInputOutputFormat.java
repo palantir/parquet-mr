@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -46,7 +46,6 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.parquet.Files;
-import org.apache.parquet.Log;
 import org.apache.parquet.Strings;
 import org.apache.parquet.example.data.Group;
 import org.apache.parquet.example.data.simple.SimpleGroupFactory;
@@ -62,9 +61,11 @@ import org.apache.parquet.hadoop.util.ContextUtil;
 import org.apache.parquet.schema.MessageTypeParser;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestInputOutputFormat {
-  private static final Log LOG = Log.getLog(TestInputOutputFormat.class);
+  private static final Logger LOG = LoggerFactory.getLogger(TestInputOutputFormat.class);
   private static final Charset UTF_8 = Charset.forName("UTF-8");
   final Path inputPath = new Path("src/test/java/org/apache/parquet/hadoop/example/TestInputOutputFormat.java");
   Job writeJob;
@@ -339,6 +340,7 @@ public class TestInputOutputFormat {
   @Test
   public void testReadWriteWithCounter() throws Exception {
     runMapReduceJob(CompressionCodecName.GZIP);
+
     assertTrue(value(readJob, "parquet", "bytesread") > 0L);
     assertTrue(value(readJob, "parquet", "bytestotal") > 0L);
     assertTrue(value(readJob, "parquet", "bytesread")
@@ -359,10 +361,10 @@ public class TestInputOutputFormat {
 
   private void waitForJob(Job job) throws InterruptedException, IOException {
     while (!job.isComplete()) {
-      LOG.debug("waiting for job " + job.getJobName());
+      LOG.debug("waiting for job {}", job.getJobName());
       sleep(100);
     }
-    LOG.info("status for job " + job.getJobName() + ": " + (job.isSuccessful() ? "SUCCESS" : "FAILURE"));
+    LOG.info("status for job {}: {}", job.getJobName(), (job.isSuccessful() ? "SUCCESS" : "FAILURE"));
     if (!job.isSuccessful()) {
       throw new RuntimeException("job failed " + job.getJobName());
     }
