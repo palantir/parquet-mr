@@ -18,7 +18,6 @@
  */
 package org.apache.parquet.filter2.dictionarylevel;
 
-import org.apache.parquet.Log;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.column.Dictionary;
 import org.apache.parquet.column.Encoding;
@@ -30,6 +29,8 @@ import org.apache.parquet.filter2.predicate.Operators.*;
 import org.apache.parquet.filter2.predicate.UserDefinedPredicate;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -47,7 +48,7 @@ import static org.apache.parquet.Preconditions.checkNotNull;
  */
 public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
 
-  private static final Log LOG = Log.getLog(DictionaryFilter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(DictionaryFilter.class);
   private static final boolean BLOCK_MIGHT_MATCH = false;
   private static final boolean BLOCK_CANNOT_MATCH = true;
 
@@ -99,7 +100,7 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
         case DOUBLE: dictSet.add(dict.decodeToDouble(i));
           break;
         default:
-          LOG.warn("Unknown dictionary type" + meta.getType());
+          LOG.warn("Unknown dictionary type{}", meta.getType());
       }
     }
 
@@ -211,8 +212,8 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
         return BLOCK_MIGHT_MATCH;
       }
 
-      for(T entry : dictSet) {
-        if(value.compareTo(entry) > 0) {
+      for (T entry : dictSet) {
+        if (value.compareTo(entry) > 0) {
           return BLOCK_MIGHT_MATCH;
         }
       }
@@ -252,8 +253,8 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
         return BLOCK_MIGHT_MATCH;
       }
 
-      for(T entry : dictSet) {
-        if(value.compareTo(entry) >= 0) {
+      for (T entry : dictSet) {
+        if (value.compareTo(entry) >= 0) {
           return BLOCK_MIGHT_MATCH;
         }
       }
@@ -291,8 +292,8 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
         return BLOCK_MIGHT_MATCH;
       }
 
-      for(T entry : dictSet) {
-        if(value.compareTo(entry) < 0) {
+      for (T entry : dictSet) {
+        if (value.compareTo(entry) < 0) {
           return BLOCK_MIGHT_MATCH;
         }
       }
@@ -332,8 +333,8 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
         return BLOCK_MIGHT_MATCH;
       }
 
-      for(T entry : dictSet) {
-        if(value.compareTo(entry) <= 0) {
+      for (T entry : dictSet) {
+        if (value.compareTo(entry) <= 0) {
           return BLOCK_MIGHT_MATCH;
         }
       }
@@ -365,9 +366,18 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
   private <T extends Comparable<T>, U extends UserDefinedPredicate<T>> Boolean visit(UserDefined<T, U> ud, boolean inverted) {
     Column<T> filterColumn = ud.getColumn();
     ColumnChunkMetaData meta = getColumnChunk(filterColumn.getColumnPath());
+    U udp = ud.getUserDefinedPredicate();
 
-    // Cannot make assumptions around UDPs and acceptance of null values
-    if (meta == null || hasNonDictionaryPages(meta)) {
+    // The column is missing, thus all null. Check if the predicate keeps null.
+    if (meta == null) {
+      if (inverted) {
+        return udp.keep(null);
+      } else {
+        return !udp.keep(null);
+      }
+    }
+
+    if (hasNonDictionaryPages(meta)) {
       return BLOCK_MIGHT_MATCH;
     }
 
@@ -377,24 +387,11 @@ public class DictionaryFilter implements FilterPredicate.Visitor<Boolean> {
         return BLOCK_MIGHT_MATCH;
       }
 
-      boolean allMatch = true;
-      for(T entry : dictSet) {
-        if (ud.getUserDefinedPredicate().keep(entry)) {
-          if (!inverted) {
-            return BLOCK_MIGHT_MATCH;
-          }
-        } else {
-          allMatch = false;
-        }
+      for (T entry : dictSet) {
+        boolean keep = udp.keep(entry);
+        if ((keep && !inverted) || (!keep && inverted)) return BLOCK_MIGHT_MATCH;
       }
-
-      if (inverted && allMatch) {
-        return BLOCK_CANNOT_MATCH;
-      } else if (inverted) {
-        return BLOCK_MIGHT_MATCH;
-      } else {
-        return BLOCK_CANNOT_MATCH;
-      }
+      return BLOCK_CANNOT_MATCH;
     } catch (IOException e) {
       LOG.warn("Failed to process dictionary for filter evaluation.", e);
     }
