@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,11 +35,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.CorruptStatistics;
-import org.apache.parquet.format.PageEncodingStats;
-import org.apache.parquet.hadoop.metadata.ColumnPath;
+import org.apache.parquet.column.EncodingStats;
 import org.apache.parquet.format.ColumnChunk;
 import org.apache.parquet.format.ColumnMetaData;
 import org.apache.parquet.format.ConvertedType;
@@ -50,6 +47,7 @@ import org.apache.parquet.format.Encoding;
 import org.apache.parquet.format.FieldRepetitionType;
 import org.apache.parquet.format.FileMetaData;
 import org.apache.parquet.format.KeyValue;
+import org.apache.parquet.format.PageEncodingStats;
 import org.apache.parquet.format.PageHeader;
 import org.apache.parquet.format.PageType;
 import org.apache.parquet.format.RowGroup;
@@ -58,8 +56,8 @@ import org.apache.parquet.format.Statistics;
 import org.apache.parquet.format.Type;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
+import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
-import org.apache.parquet.column.EncodingStats;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.schema.GroupType;
@@ -83,19 +81,7 @@ public class ParquetMetadataConverter {
 
   private static final Logger LOG = LoggerFactory.getLogger(ParquetMetadataConverter.class);
 
-  private final boolean useSignedStringMinMax;
-
-  public ParquetMetadataConverter() {
-    this(false);
-  }
-
-  public ParquetMetadataConverter(Configuration conf) {
-    this(conf.getBoolean("parquet.strings.signed-min-max.enabled", false));
-  }
-
-  private ParquetMetadataConverter(boolean useSignedStringMinMax) {
-    this.useSignedStringMinMax = useSignedStringMinMax;
-  }
+  public ParquetMetadataConverter() { }
 
   // NOTE: this cache is for memory savings, not cpu savings, and is used to de-duplicate
   // sets of encodings. It is important that all collections inserted to this cache be
@@ -328,14 +314,14 @@ public class ParquetMetadataConverter {
    * @deprecated Use {@link #fromParquetStatistics(String, Statistics, PrimitiveType)} instead.
    */
   @Deprecated
-  public static org.apache.parquet.column.statistics.Statistics fromParquetStatistics
-      (String createdBy, Statistics statistics, PrimitiveTypeName type) {
-    return fromParquetStatisticsInternal(createdBy, statistics, type, defaultSortOrder(type));
+  public static org.apache.parquet.column.statistics.Statistics fromParquetStatistics(
+      String createdBy, Statistics statistics, PrimitiveTypeName type) {
+    return fromParquetStatisticsInternal(createdBy, statistics, type);
   }
 
   // Visible for testing
   static org.apache.parquet.column.statistics.Statistics fromParquetStatisticsInternal
-      (String createdBy, Statistics statistics, PrimitiveTypeName type, SortOrder typeSortOrder) {
+      (String createdBy, Statistics statistics, PrimitiveTypeName type) {
     // create stats object based on the column type
     org.apache.parquet.column.statistics.Statistics stats = org.apache.parquet.column.statistics.Statistics.getStatsBasedOnType(type);
     // If there was no statistics written to the footer, create an empty Statistics object and return
@@ -344,8 +330,7 @@ public class ParquetMetadataConverter {
     // The sort order is checked to avoid returning min/max stats that are not
     // valid with the type's sort order. Currently, all stats are aggregated
     // using a signed ordering, which isn't valid for strings or unsigned ints.
-    if (statistics != null && !CorruptStatistics.shouldIgnoreStatistics(createdBy, type) &&
-        SortOrder.SIGNED == typeSortOrder) {
+    if (statistics != null && !CorruptStatistics.shouldIgnoreStatistics(createdBy, type)) {
       if (statistics.isSetMax() && statistics.isSetMin()) {
         stats.setMinMaxFromBytes(statistics.min.array(), statistics.max.array());
       }
@@ -356,108 +341,7 @@ public class ParquetMetadataConverter {
 
   public org.apache.parquet.column.statistics.Statistics fromParquetStatistics(
       String createdBy, Statistics statistics, PrimitiveType type) {
-    SortOrder expectedOrder = overrideSortOrderToSigned(type) ?
-        SortOrder.SIGNED : sortOrder(type);
-    return fromParquetStatisticsInternal(
-        createdBy, statistics, type.getPrimitiveTypeName(), expectedOrder);
-  }
-
-  /**
-   * Sort order for page and column statistics. Types are associated with sort
-   * orders (e.g., UTF8 columns should use UNSIGNED) and column stats are
-   * aggregated using a sort order. As of parquet-format version 2.3.1, the
-   * order used to aggregate stats is always SIGNED and is not stored in the
-   * Parquet file. These stats are discarded for types that need unsigned.
-   *
-   * See PARQUET-686.
-   */
-  enum SortOrder {
-    SIGNED,
-    UNSIGNED,
-    UNKNOWN
-  }
-
-  private static final Set<OriginalType> STRING_TYPES = Collections
-      .unmodifiableSet(new HashSet<>(Arrays.asList(
-          OriginalType.UTF8, OriginalType.ENUM, OriginalType.JSON
-      )));
-
-  /**
-   * Returns whether to use signed order min and max with a type. It is safe to
-   * use signed min and max when the type is a string type and contains only
-   * ASCII characters (where the sign bit was 0). This checks whether the type
-   * is a string type and uses {@code useSignedStringMinMax} to determine if
-   * only ASCII characters were written.
-   *
-   * @param type a primitive type with a logical type annotation
-   * @return true if signed order min/max can be used with this type
-   */
-  private boolean overrideSortOrderToSigned(PrimitiveType type) {
-    // even if the override is set, only return stats for string-ish types
-    // a null type annotation is considered string-ish because some writers
-    // failed to use the UTF8 annotation.
-    OriginalType annotation = type.getOriginalType();
-    return useSignedStringMinMax &&
-        PrimitiveTypeName.BINARY == type.getPrimitiveTypeName() &&
-        (annotation == null || STRING_TYPES.contains(annotation));
-  }
-
-  /**
-   * @param primitive a primitive physical type
-   * @return the default sort order used when the logical type is not known
-   */
-  private static SortOrder defaultSortOrder(PrimitiveTypeName primitive) {
-    switch (primitive) {
-      case BOOLEAN:
-      case INT32:
-      case INT64:
-      case FLOAT:
-      case DOUBLE:
-        return SortOrder.SIGNED;
-      case BINARY:
-      case FIXED_LEN_BYTE_ARRAY:
-      case INT96: // only used for timestamp, which uses unsigned values
-        return SortOrder.UNSIGNED;
-    }
-    return SortOrder.UNKNOWN;
-  }
-
-  /**
-   * @param primitive a primitive type with a logical type annotation
-   * @return the "correct" sort order of the type that applications assume
-   */
-  private static SortOrder sortOrder(PrimitiveType primitive) {
-    OriginalType annotation = primitive.getOriginalType();
-    if (annotation != null) {
-      switch (annotation) {
-        case INT_8:
-        case INT_16:
-        case INT_32:
-        case INT_64:
-        case DATE:
-        case TIME_MICROS:
-        case TIME_MILLIS:
-        case TIMESTAMP_MICROS:
-        case TIMESTAMP_MILLIS:
-          return SortOrder.SIGNED;
-        case UINT_8:
-        case UINT_16:
-        case UINT_32:
-        case UINT_64:
-        case ENUM:
-        case UTF8:
-        case BSON:
-        case JSON:
-          return SortOrder.UNSIGNED;
-        case DECIMAL:
-        case LIST:
-        case MAP:
-        case MAP_KEY_VALUE:
-        case INTERVAL:
-          return SortOrder.UNKNOWN;
-      }
-    }
-    return defaultSortOrder(primitive.getPrimitiveTypeName());
+    return fromParquetStatisticsInternal(createdBy, statistics, type.getPrimitiveTypeName());
   }
 
   public PrimitiveTypeName getPrimitive(Type type) {
