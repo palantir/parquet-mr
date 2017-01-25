@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -330,7 +330,7 @@ public class TestParquetMetadataConverter {
             0, 0, 0, 0, 0);
     return md;
   }
-  
+
   @Test
   public void testEncodingsCache() {
     ParquetMetadataConverter parquetMetadataConverter = new ParquetMetadataConverter();
@@ -403,8 +403,7 @@ public class TestParquetMetadataConverter {
         formatStats.isSetNull_count());
 
     Statistics roundTripStats = ParquetMetadataConverter.fromParquetStatisticsInternal(
-        Version.FULL_VERSION, formatStats, PrimitiveTypeName.BINARY,
-        ParquetMetadataConverter.SortOrder.SIGNED);
+        Version.FULL_VERSION, formatStats, PrimitiveTypeName.BINARY);
 
     Assert.assertTrue(roundTripStats.isEmpty());
   }
@@ -518,50 +517,4 @@ public class TestParquetMetadataConverter {
         3004, formatStats.getNull_count());
   }
 
-  @Test
-  public void testIgnoreStatsWithSignedSortOrder() {
-    ParquetMetadataConverter converter = new ParquetMetadataConverter();
-    BinaryStatistics stats = new BinaryStatistics();
-    stats.incrementNumNulls();
-    stats.updateStats(Binary.fromString("A"));
-    stats.incrementNumNulls();
-    stats.updateStats(Binary.fromString("z"));
-    stats.incrementNumNulls();
-
-    Statistics convertedStats = converter.fromParquetStatistics(
-        Version.FULL_VERSION,
-        ParquetMetadataConverter.toParquetStatistics(stats),
-        Types.required(PrimitiveTypeName.BINARY)
-            .as(OriginalType.UTF8).named("b"));
-
-    Assert.assertTrue("Stats should be empty", convertedStats.isEmpty());
-  }
-
-  @Test
-  public void testUseStatsWithSignedSortOrder() {
-    // override defaults and use stats that were accumulated using signed order
-    Configuration conf = new Configuration();
-    conf.setBoolean("parquet.strings.signed-min-max.enabled", true);
-
-    ParquetMetadataConverter converter = new ParquetMetadataConverter(conf);
-    BinaryStatistics stats = new BinaryStatistics();
-    stats.incrementNumNulls();
-    stats.updateStats(Binary.fromString("A"));
-    stats.incrementNumNulls();
-    stats.updateStats(Binary.fromString("z"));
-    stats.incrementNumNulls();
-
-    Statistics convertedStats = converter.fromParquetStatistics(
-        Version.FULL_VERSION,
-        ParquetMetadataConverter.toParquetStatistics(stats),
-        Types.required(PrimitiveTypeName.BINARY)
-            .as(OriginalType.UTF8).named("b"));
-
-    Assert.assertFalse("Stats should not be empty", convertedStats.isEmpty());
-    Assert.assertEquals("Should have 3 nulls", 3, convertedStats.getNumNulls());
-    Assert.assertEquals("Should have correct min (unsigned sort)",
-        Binary.fromString("A"), convertedStats.genericGetMin());
-    Assert.assertEquals("Should have correct max (unsigned sort)",
-        Binary.fromString("z"), convertedStats.genericGetMax());
-  }
 }
