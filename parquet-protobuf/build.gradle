@@ -4,7 +4,7 @@ apply plugin: 'com.google.protobuf'
 description = 'Apache Parquet Protobuf'
 
 dependencies {
-    compile 'com.google.protobuf:protobuf-java:2.5.0'
+    compile 'com.google.protobuf:protobuf-java:3.3.0'
     compile project(':parquet-common')
     compile project(':parquet-column')
     compile project(':parquet-hadoop')

@@ -15,6 +15,6 @@ tasks.idea.dependsOn codeGenTask
 description = 'Apache Parquet Encodings'
 dependencies {
     compile project(':parquet-common')
-    compile 'commons-codec:commons-codec:1.5'
+    compile 'commons-codec:commons-codec:1.10'
     testCompile 'org.slf4j:slf4j-simple:1.7.5'
 }

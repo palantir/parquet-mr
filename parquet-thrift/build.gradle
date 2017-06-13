@@ -15,10 +15,10 @@ dependencies {
     compileOnly 'org.apache.hadoop:hadoop-client:2.3.0'
     compileOnly 'org.apache.pig:pig:0.14.0:h2'
     compileOnly 'org.apache.thrift:libthrift:0.9.0'
-    compileOnly 'joda-time:joda-time:1.6'
+    compileOnly 'joda-time:joda-time:2.9.9'
     testCompile project(':parquet-column')
     testCompile project(':parquet-hadoop')
-    testCompile 'org.antlr:antlr-runtime:3.4'
+    testCompile 'org.antlr:antlr-runtime:3.5.2'
     testCompile 'org.slf4j:slf4j-log4j12:1.7.5'
     testCompile 'org.apache.pig:pig:0.14.0:h2'
     testCompile 'org.apache.thrift:libthrift:0.9.0'
