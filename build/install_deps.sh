@@ -6,12 +6,13 @@ set -eu
 
 case $(uname) in
   'Linux')
-    # protoc is already available on circle nodes. Need to ensure version didn't change
+    curl -OL https://github.com/google/protobuf/releases/download/v3.3.0/protoc-3.3.0-linux-x86_64.zip
+    unzip protoc-3.3.0-linux-x86_64.zip -d protoc3
+    sudo mv protoc3/bin/protoc /usr/bin/protoc
     sudo apt-get install thrift-compiler
     ;;
   'Darwin')
-    brew tap homebrew/versions
-    brew install protobuf250
+    brew install protobuf
     brew install thrift
     ;;
   *) ;;

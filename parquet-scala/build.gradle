@@ -6,6 +6,6 @@ description = 'Apache Parquet Scala'
 dependencies {
     compile project(':parquet-column')
     compile 'org.scala-lang:scala-library:2.11.8'
-    testCompile 'org.scalatest:scalatest_2.11:2.2.1'
+    testCompile 'org.scalatest:scalatest_2.11:3.0.1'
     testCompile 'org.slf4j:slf4j-simple:1.7.5'
 }

@@ -18,11 +18,11 @@ tasks.idea.dependsOn codeGenTask
 dependencies {
     compile project(':parquet-common')
     compile project(':parquet-encoding')
-    compile 'commons-codec:commons-codec:1.5'
-    compile 'it.unimi.dsi:fastutil:6.5.7'
+    compile 'commons-codec:commons-codec:1.10'
+    compile 'it.unimi.dsi:fastutil:7.0.13'
     testCompile project(':parquet-encoding')
-    testCompile 'com.carrotsearch:junit-benchmarks:0.7.0'
-    testCompile 'com.h2database:h2:1.3.149'
+    testCompile 'com.carrotsearch:junit-benchmarks:0.7.2'
+    testCompile 'com.h2database:h2:1.4.193'
     testCompile 'org.slf4j:slf4j-simple:1.7.5'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile 'com.google.guava:guava:11.0'
