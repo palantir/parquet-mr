@@ -65,6 +65,8 @@ import org.apache.parquet.hadoop.api.ReadSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.ContextUtil;
 import org.apache.parquet.schema.MessageTypeParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestInputOutputFormat {
   private static final Logger LOG = LoggerFactory.getLogger(TestInputOutputFormat.class);
