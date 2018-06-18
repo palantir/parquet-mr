@@ -1,28 +1,54 @@
 rootProject.name = 'parquet'
-include 'parquet-arrow'
-include 'parquet-avro'
-include 'parquet-benchmarks'
-include 'parquet-cascading3'
-include 'parquet-column'
-include 'parquet-common'
-include 'parquet-encoding'
-include 'parquet-generator'
-include 'parquet-hadoop'
-include 'parquet-jackson'
-include 'parquet-pig'
-include 'parquet-pig-bundle'
-include 'parquet-protobuf'
-include 'parquet-scala_2.11'
-include 'parquet-scrooge_2.11'
-include 'parquet-thrift'
-include 'parquet-hadoop-bundle'
-include 'parquet-hive:parquet-hive-binding:parquet-hive-binding-interface'
-include 'parquet-hive:parquet-hive-binding:parquet-hive-0.10-binding'
-include 'parquet-hive:parquet-hive-binding:parquet-hive-0.12-binding'
-include 'parquet-hive:parquet-hive-binding:parquet-hive-binding-factory'
-include 'parquet-hive:parquet-hive-binding:parquet-hive-binding-bundle'
-include 'parquet-hive:parquet-hive-binding'
-include 'parquet-hive:parquet-hive-storage-handler'
-include 'parquet-hive'
-include 'parquet-hive-bundle'
-include 'parquet-tools'
+include ':parquet-avro'
+include ':parquet-benchmarks'
+include ':parquet-cascading3'
+include ':parquet-column'
+include ':parquet-common'
+include ':parquet-encoding'
+include ':parquet-generator'
+include ':parquet-hadoop'
+include ':parquet-jackson'
+include ':parquet-pig'
+include ':parquet-pig-bundle'
+include ':parquet-protobuf'
+include ':parquet-scala_2.11'
+include ':parquet-scrooge_2.11'
+include ':parquet-thrift'
+include ':parquet-hadoop-bundle'
+include ':parquet-hive:parquet-hive-binding:parquet-hive-binding-interface'
+include ':parquet-hive:parquet-hive-binding:parquet-hive-0.10-binding'
+include ':parquet-hive:parquet-hive-binding:parquet-hive-0.12-binding'
+include ':parquet-hive:parquet-hive-binding:parquet-hive-binding-factory'
+include ':parquet-hive:parquet-hive-binding:parquet-hive-binding-bundle'
+include ':parquet-hive:parquet-hive-binding'
+include ':parquet-hive:parquet-hive-storage-handler'
+include ':parquet-hive'
+include ':parquet-hive-bundle'
+include ':parquet-tools'
+
+project(':parquet-avro').projectDir = "$rootDir/parquet-avro" as File
+project(':parquet-benchmarks').projectDir = "$rootDir/parquet-benchmarks" as File
+project(':parquet-cascading3').projectDir = "$rootDir/parquet-cascading3" as File
+project(':parquet-column').projectDir = "$rootDir/parquet-column" as File
+project(':parquet-common').projectDir = "$rootDir/parquet-common" as File
+project(':parquet-encoding').projectDir = "$rootDir/parquet-encoding" as File
+project(':parquet-generator').projectDir = "$rootDir/parquet-generator" as File
+project(':parquet-hadoop').projectDir = "$rootDir/parquet-hadoop" as File
+project(':parquet-jackson').projectDir = "$rootDir/parquet-jackson" as File
+project(':parquet-pig').projectDir = "$rootDir/parquet-pig" as File
+project(':parquet-pig-bundle').projectDir = "$rootDir/parquet-pig-bundle" as File
+project(':parquet-protobuf').projectDir = "$rootDir/parquet-protobuf" as File
+project(':parquet-scala_2.11').projectDir = "$rootDir/parquet-scala" as File
+project(':parquet-scrooge_2.11').projectDir = "$rootDir/parquet-scrooge" as File
+project(':parquet-thrift').projectDir = "$rootDir/parquet-thrift" as File
+project(':parquet-hadoop-bundle').projectDir = "$rootDir/parquet-hadoop-bundle" as File
+project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-interface').projectDir = "$rootDir/parquet-hive/parquet-hive-binding/parquet-hive-binding-interface" as File
+project(':parquet-hive:parquet-hive-binding:parquet-hive-0.10-binding').projectDir = "$rootDir/parquet-hive/parquet-hive-binding/parquet-hive-0.10-binding" as File
+project(':parquet-hive:parquet-hive-binding:parquet-hive-0.12-binding').projectDir = "$rootDir/parquet-hive/parquet-hive-binding/parquet-hive-0.12-binding" as File
+project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-factory').projectDir = "$rootDir/parquet-hive/parquet-hive-binding/parquet-hive-binding-factory" as File
+project(':parquet-hive:parquet-hive-binding:parquet-hive-binding-bundle').projectDir = "$rootDir/parquet-hive/parquet-hive-binding/parquet-hive-binding-bundle" as File
+project(':parquet-hive:parquet-hive-binding').projectDir = "$rootDir/parquet-hive/parquet-hive-binding" as File
+project(':parquet-hive:parquet-hive-storage-handler').projectDir = "$rootDir/parquet-hive/parquet-hive-storage-handler" as File
+project(':parquet-hive').projectDir = "$rootDir/parquet-hive" as File
+project(':parquet-hive-bundle').projectDir = "$rootDir/parquet-hive-bundle" as File
+project(':parquet-tools').projectDir = "$rootDir/parquet-tools" as File
