@@ -1,7 +1,0 @@
-apply from: "${rootDir}/gradle/publish.gradle"
-
-description = 'Apache Parquet Pig Bundle'
-
-dependencies {
-  compile project(':parquet-pig')
-}

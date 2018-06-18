@@ -35,7 +35,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -47,9 +49,13 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.parquet.Files;
 import org.apache.parquet.Strings;
+import org.apache.parquet.filter2.predicate.FilterApi;
+import org.junit.Before;
+import org.junit.Test;
+
+import org.apache.parquet.Log;
 import org.apache.parquet.example.data.Group;
 import org.apache.parquet.example.data.simple.SimpleGroupFactory;
-import org.apache.parquet.filter2.predicate.FilterApi;
 import org.apache.parquet.hadoop.ParquetInputFormat;
 import org.apache.parquet.hadoop.ParquetOutputFormat;
 import org.apache.parquet.hadoop.api.DelegatingReadSupport;
@@ -59,15 +65,13 @@ import org.apache.parquet.hadoop.api.ReadSupport;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.ContextUtil;
 import org.apache.parquet.schema.MessageTypeParser;
-import org.junit.Before;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TestInputOutputFormat {
   private static final Logger LOG = LoggerFactory.getLogger(TestInputOutputFormat.class);
   private static final Charset UTF_8 = Charset.forName("UTF-8");
+  final Path parquetPath = new Path("target/test/example/TestInputOutputFormat/parquet");
   final Path inputPath = new Path("src/test/java/org/apache/parquet/hadoop/example/TestInputOutputFormat.java");
+  final Path outputPath = new Path("target/test/example/TestInputOutputFormat/out");
   Job writeJob;
   Job readJob;
   private String writeSchema;
@@ -161,24 +165,23 @@ public class TestInputOutputFormat {
     }
   }
   private void runMapReduceJob(CompressionCodecName codec) throws IOException, ClassNotFoundException, InterruptedException {
-    java.nio.file.Path parquetPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(parquetPath);
-    java.nio.file.Path outputPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(outputPath);
-    runMapReduceJob(codec, Collections.<String, String>emptyMap(), parquetPath.toString(), outputPath.toString());
+    runMapReduceJob(codec, Collections.<String, String>emptyMap());
   }
-  private void runMapReduceJob(CompressionCodecName codec, Map<String, String> extraConf, String parquetPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException {
+  private void runMapReduceJob(CompressionCodecName codec, Map<String, String> extraConf) throws IOException, ClassNotFoundException, InterruptedException {
     Configuration conf = new Configuration(this.conf);
     for (Map.Entry<String, String> entry : extraConf.entrySet()) {
       conf.set(entry.getKey(), entry.getValue());
     }
+    final FileSystem fileSystem = parquetPath.getFileSystem(conf);
+    fileSystem.delete(parquetPath, true);
+    fileSystem.delete(outputPath, true);
     {
       writeJob = new Job(conf, "write");
       TextInputFormat.addInputPath(writeJob, inputPath);
       writeJob.setInputFormatClass(TextInputFormat.class);
       writeJob.setNumReduceTasks(0);
       ParquetOutputFormat.setCompression(writeJob, codec);
-      ParquetOutputFormat.setOutputPath(writeJob, new Path(parquetPath));
+      ParquetOutputFormat.setOutputPath(writeJob, parquetPath);
       writeJob.setOutputFormatClass(ParquetOutputFormat.class);
       writeJob.setMapperClass(readMapperClass);
 
@@ -196,9 +199,9 @@ public class TestInputOutputFormat {
       readJob.setInputFormatClass(ParquetInputFormat.class);
       ParquetInputFormat.setReadSupportClass(readJob, MyReadSupport.class);
 
-      ParquetInputFormat.setInputPaths(readJob, new Path(parquetPath));
+      ParquetInputFormat.setInputPaths(readJob, parquetPath);
       readJob.setOutputFormatClass(TextOutputFormat.class);
-      TextOutputFormat.setOutputPath(readJob, new Path(outputPath));
+      TextOutputFormat.setOutputPath(readJob, outputPath);
       readJob.setMapperClass(writeMapperClass);
       readJob.setNumReduceTasks(0);
       readJob.submit();
@@ -210,12 +213,7 @@ public class TestInputOutputFormat {
     testReadWrite(codec, Collections.<String, String>emptyMap());
   }
   private void testReadWrite(CompressionCodecName codec, Map<String, String> conf) throws IOException, ClassNotFoundException, InterruptedException {
-    java.nio.file.Path parquetPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(parquetPath);
-    java.nio.file.Path outputPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(outputPath);
-
-    runMapReduceJob(codec, conf, parquetPath.toString(), outputPath.toString());
+    runMapReduceJob(codec, conf);
     final BufferedReader in = new BufferedReader(new FileReader(new File(inputPath.toString())));
     final BufferedReader out = new BufferedReader(new FileReader(new File(outputPath.toString(), "part-m-00000")));
     String lineIn;
@@ -256,15 +254,10 @@ public class TestInputOutputFormat {
     ParquetInputFormat.setFilterPredicate(conf, FilterApi.eq(FilterApi.intColumn("line"), -1000));
     final String fpString = conf.get(ParquetInputFormat.FILTER_PREDICATE);
 
-    java.nio.file.Path parquetPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(parquetPath);
-    java.nio.file.Path outputPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(outputPath);
-
     runMapReduceJob(CompressionCodecName.UNCOMPRESSED, new HashMap<String, String>() {{
       put("parquet.task.side.metadata", "true");
       put(ParquetInputFormat.FILTER_PREDICATE, fpString);
-    }}, parquetPath.toString(), outputPath.toString());
+    }});
 
     List<String> lines = Files.readAllLines(new File(outputPath.toString(), "part-m-00000"), UTF_8);
     assertTrue(lines.isEmpty());
@@ -279,15 +272,10 @@ public class TestInputOutputFormat {
     ParquetInputFormat.setFilterPredicate(conf, FilterApi.lt(FilterApi.intColumn("line"), 500));
     final String fpString = conf.get(ParquetInputFormat.FILTER_PREDICATE);
 
-    java.nio.file.Path parquetPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(parquetPath);
-    java.nio.file.Path outputPath = java.nio.file.Files.createTempDirectory("").toAbsolutePath();
-    java.nio.file.Files.deleteIfExists(outputPath);
-
     runMapReduceJob(CompressionCodecName.UNCOMPRESSED, new HashMap<String, String>() {{
       put("parquet.task.side.metadata", "true");
       put(ParquetInputFormat.FILTER_PREDICATE, fpString);
-    }}, parquetPath.toString(), outputPath.toString());
+    }});
 
     List<String> expected = Files.readAllLines(new File(inputPath.toString()), UTF_8);
 

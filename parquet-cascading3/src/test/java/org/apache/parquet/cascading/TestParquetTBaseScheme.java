@@ -59,10 +59,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TestParquetTBaseScheme {
-  final String txtInputPath = "build/resources/test/names.txt";
-  final String parquetInputPath = "build/resources/test/ParquetTBaseScheme/names-parquet-in";
-  final String parquetOutputPath = "build/resources/test/ParquetTBaseScheme/names-parquet-out";
-  final String txtOutputPath = "build/resources/test/ParquetTBaseScheme/names-txt-out";
+  final String txtInputPath = "target/test-classes/names.txt";
+  final String parquetInputPath = "target/test/ParquetTBaseScheme/names-parquet-in";
+  final String parquetOutputPath = "target/test/ParquetTBaseScheme/names-parquet-out";
+  final String txtOutputPath = "target/test/ParquetTBaseScheme/names-txt-out";
 
   @Test
   public void testWrite() throws Exception {

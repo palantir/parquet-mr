@@ -21,7 +21,6 @@ package org.apache.parquet.column.values.deltastrings.benchmark;
 import java.io.IOException;
 import java.util.Arrays;
 
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -40,7 +39,6 @@ import com.carrotsearch.junitbenchmarks.annotation.BenchmarkMethodChart;
 
 @AxisRange(min = 0, max = 1)
 @BenchmarkMethodChart(filePrefix = "benchmark-encoding-writing-random")
-@Ignore
 public class BenchmarkDeltaByteArray {
 
   @Rule

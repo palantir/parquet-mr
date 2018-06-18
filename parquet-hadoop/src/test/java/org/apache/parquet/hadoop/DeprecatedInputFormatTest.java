@@ -18,24 +18,17 @@
  */
 package org.apache.parquet.hadoop;
 
-import static java.lang.Thread.sleep;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
-import java.io.IOException;
-import java.nio.file.Files;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.junit.Before;
+import org.junit.Test;
 import org.apache.parquet.example.data.Group;
 import org.apache.parquet.example.data.simple.SimpleGroupFactory;
 import org.apache.parquet.hadoop.api.ReadSupport;
@@ -47,8 +40,12 @@ import org.apache.parquet.hadoop.mapred.DeprecatedParquetInputFormat;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.ContextUtil;
 import org.apache.parquet.schema.MessageTypeParser;
-import org.junit.Before;
-import org.junit.Test;
+
+import java.io.IOException;
+
+import static java.lang.Thread.sleep;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * DeprecatedParquetInputFormat is used by cascading. It initializes the recordReader using an initialize method with
@@ -56,7 +53,9 @@ import org.junit.Test;
  * @author Tianshuo Deng
  */
 public class DeprecatedInputFormatTest {
+  final Path parquetPath = new Path("target/test/example/TestInputOutputFormat/parquet");
   final Path inputPath = new Path("src/test/java/org/apache/parquet/hadoop/example/TestInputOutputFormat.java");
+  final Path outputPath = new Path("target/test/example/TestInputOutputFormat/out");
   Job writeJob;
   JobConf jobConf;
   RunningJob mapRedJob;
@@ -79,18 +78,18 @@ public class DeprecatedInputFormatTest {
             "}";
   }
 
-  private void runMapReduceJob(CompressionCodecName codec, String prefix) throws IOException, ClassNotFoundException, InterruptedException {
-    java.nio.file.Path parquetPath = Files.createTempDirectory(prefix).toAbsolutePath();
-    Files.deleteIfExists(parquetPath);
-    java.nio.file.Path outputPath = Files.createTempDirectory(prefix).toAbsolutePath();
-    Files.deleteIfExists(outputPath);
+  private void runMapReduceJob(CompressionCodecName codec) throws IOException, ClassNotFoundException, InterruptedException {
+
+    final FileSystem fileSystem = parquetPath.getFileSystem(conf);
+    fileSystem.delete(parquetPath, true);
+    fileSystem.delete(outputPath, true);
     {
       writeJob = new Job(conf, "write");
       TextInputFormat.addInputPath(writeJob, inputPath);
       writeJob.setInputFormatClass(TextInputFormat.class);
       writeJob.setNumReduceTasks(0);
       ExampleOutputFormat.setCompression(writeJob, codec);
-      ExampleOutputFormat.setOutputPath(writeJob, new Path(parquetPath.toString()));
+      ExampleOutputFormat.setOutputPath(writeJob, parquetPath);
       writeJob.setOutputFormatClass(ExampleOutputFormat.class);
       writeJob.setMapperClass(ReadMapper.class);
       ExampleOutputFormat.setSchema(
@@ -100,25 +99,22 @@ public class DeprecatedInputFormatTest {
       writeJob.submit();
       waitForJob(writeJob);
     }
-    System.err.println("wrote file");
     {
       jobConf.set(ReadSupport.PARQUET_READ_SCHEMA, readSchema);
       jobConf.set(ParquetInputFormat.READ_SUPPORT_CLASS, GroupReadSupport.class.getCanonicalName());
       jobConf.setInputFormat(MyDeprecatedInputFormat.class);
-      MyDeprecatedInputFormat.setInputPaths(jobConf, new Path(parquetPath.toString()));
+      MyDeprecatedInputFormat.setInputPaths(jobConf, parquetPath);
       jobConf.setOutputFormat(org.apache.hadoop.mapred.TextOutputFormat.class);
-      org.apache.hadoop.mapred.TextOutputFormat.setOutputPath(jobConf, new Path(outputPath.toString()));
+      org.apache.hadoop.mapred.TextOutputFormat.setOutputPath(jobConf, outputPath);
       jobConf.setMapperClass(DeprecatedWriteMapper.class);
       jobConf.setNumReduceTasks(0);
-      System.err.println("Attempting to read file");
       mapRedJob = JobClient.runJob(jobConf);
-      System.err.println("running a job");
     }
   }
 
   @Test
   public void testReadWriteWithCountDeprecated() throws Exception {
-    runMapReduceJob(CompressionCodecName.GZIP, "readwritewithcount");
+    runMapReduceJob(CompressionCodecName.GZIP);
     assertTrue(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytesread").getValue() > 0L);
     assertTrue(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytestotal").getValue() > 0L);
     assertTrue(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytesread").getValue()
@@ -131,7 +127,7 @@ public class DeprecatedInputFormatTest {
     jobConf.set("parquet.benchmark.time.read", "false");
     jobConf.set("parquet.benchmark.bytes.total", "false");
     jobConf.set("parquet.benchmark.bytes.read", "false");
-    runMapReduceJob(CompressionCodecName.GZIP, "readwritewithcount");
+    runMapReduceJob(CompressionCodecName.GZIP);
     assertEquals(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytesread").getValue(), 0L);
     assertEquals(mapRedJob.getCounters().getGroup("parquet").getCounterForName("bytestotal").getValue(), 0L);
     assertEquals(mapRedJob.getCounters().getGroup("parquet").getCounterForName("timeread").getValue(), 0L);

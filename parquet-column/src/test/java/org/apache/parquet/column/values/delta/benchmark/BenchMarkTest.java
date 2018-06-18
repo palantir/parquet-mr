@@ -20,7 +20,6 @@ package org.apache.parquet.column.values.delta.benchmark;
 
 import org.apache.parquet.column.values.ValuesWriter;
 
-
 public abstract class BenchMarkTest {
   public static int[] data;
 
