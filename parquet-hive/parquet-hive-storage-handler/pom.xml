@@ -45,6 +45,16 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-hive-binding-factory</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.parquet</groupId>
+      <artifactId>parquet-hive-binding-interface</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.parquet</groupId>
       <artifactId>parquet-hive-binding-bundle</artifactId>
       <version>${project.version}</version>
     </dependency>
