@@ -48,9 +48,6 @@ import org.codehaus.jackson.annotate.JsonTypeInfo.Id;
 /**
  * Descriptor for a Thrift class.
  * Used to persist the thrift schema
- *
- * @author Julien Le Dem
- *
  */
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "id")
 @JsonSubTypes({
@@ -641,11 +638,21 @@ public abstract class ThriftType {
   }
 
   public static class StringType extends ThriftType {
+    private boolean binary = false;
 
     @JsonCreator
     public StringType() {
       super(STRING);
     }
+
+    public boolean isBinary() {
+      return binary;
+    }
+
+    public void setBinary(boolean binary) {
+      this.binary = binary;
+    }
+
     @Override
     public <R, S> R accept(StateVisitor<R, S> visitor, S state) {
       return visitor.visit(this, state);

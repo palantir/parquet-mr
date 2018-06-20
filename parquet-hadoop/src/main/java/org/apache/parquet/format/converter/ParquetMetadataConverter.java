@@ -33,12 +33,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.parquet.CorruptStatistics;
 import org.apache.parquet.column.EncodingStats;
 import org.apache.parquet.format.ColumnChunk;
 import org.apache.parquet.format.ColumnMetaData;
+import org.apache.parquet.format.ColumnOrder;
 import org.apache.parquet.format.ConvertedType;
 import org.apache.parquet.format.DataPageHeader;
 import org.apache.parquet.format.DataPageHeaderV2;
@@ -54,12 +56,14 @@ import org.apache.parquet.format.RowGroup;
 import org.apache.parquet.format.SchemaElement;
 import org.apache.parquet.format.Statistics;
 import org.apache.parquet.format.Type;
+import org.apache.parquet.format.TypeDefinedOrder;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.ParquetDecodingException;
+import org.apache.parquet.schema.ColumnOrder.ColumnOrderName;
 import org.apache.parquet.schema.GroupType;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.OriginalType;
@@ -68,6 +72,7 @@ import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.TypeVisitor;
 import org.apache.parquet.schema.Types;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,11 +80,14 @@ import org.slf4j.LoggerFactory;
 // TODO: Lets split it up: https://issues.apache.org/jira/browse/PARQUET-310
 public class ParquetMetadataConverter {
 
+  private static final TypeDefinedOrder TYPE_DEFINED_ORDER = new TypeDefinedOrder();
   public static final MetadataFilter NO_FILTER = new NoFilter();
   public static final MetadataFilter SKIP_ROW_GROUPS = new SkipMetadataFilter();
   public static final long MAX_STATS_SIZE = 4096; // limit stats to 4k
 
   private static final Logger LOG = LoggerFactory.getLogger(ParquetMetadataConverter.class);
+  private static final LogicalTypeConverterVisitor LOGICAL_TYPE_ANNOTATION_VISITOR = new LogicalTypeConverterVisitor();
+  private static final ConvertedTypeConverterVisitor CONVERTED_TYPE_CONVERTER_VISITOR = new ConvertedTypeConverterVisitor();
 
   public ParquetMetadataConverter() { }
 
@@ -111,7 +119,22 @@ public class ParquetMetadataConverter {
     }
 
     fileMetaData.setCreated_by(parquetMetadata.getFileMetaData().getCreatedBy());
+
+    fileMetaData.setColumn_orders(getColumnOrders(parquetMetadata.getFileMetaData().getSchema()));
+
     return fileMetaData;
+  }
+
+  private List<ColumnOrder> getColumnOrders(MessageType schema) {
+    List<ColumnOrder> columnOrders = new ArrayList<>();
+    // Currently, only TypeDefinedOrder is supported, so we create a column order for each columns with
+    // TypeDefinedOrder even if some types (e.g. INT96) have undefined column orders.
+    for (int i = 0, n = schema.getPaths().size(); i < n; ++i) {
+      ColumnOrder columnOrder = new ColumnOrder();
+      columnOrder.setTYPE_ORDER(TYPE_DEFINED_ORDER);
+      columnOrders.add(columnOrder);
+    }
+    return columnOrders;
   }
 
   // Visible for testing
@@ -128,8 +151,9 @@ public class ParquetMetadataConverter {
         SchemaElement element = new SchemaElement(primitiveType.getName());
         element.setRepetition_type(toParquetRepetition(primitiveType.getRepetition()));
         element.setType(getType(primitiveType.getPrimitiveTypeName()));
-        if (primitiveType.getOriginalType() != null) {
-          element.setConverted_type(getConvertedType(primitiveType.getOriginalType()));
+        if (primitiveType.getLogicalTypeAnnotation() != null) {
+          element.setConverted_type(convertToConvertedType(primitiveType.getLogicalTypeAnnotation()));
+          element.setLogicalType(convertToLogicalType(primitiveType.getLogicalTypeAnnotation()));
         }
         if (primitiveType.getDecimalMetadata() != null) {
           element.setPrecision(primitiveType.getDecimalMetadata().getPrecision());
@@ -138,12 +162,18 @@ public class ParquetMetadataConverter {
         if (primitiveType.getTypeLength() > 0) {
           element.setType_length(primitiveType.getTypeLength());
         }
+        if (primitiveType.getId() != null) {
+          element.setField_id(primitiveType.getId().intValue());
+        }
         result.add(element);
       }
 
       @Override
       public void visit(MessageType messageType) {
         SchemaElement element = new SchemaElement(messageType.getName());
+        if (messageType.getId() != null) {
+          element.setField_id(messageType.getId().intValue());
+        }
         visitChildren(result, messageType.asGroupType(), element);
       }
 
@@ -151,8 +181,12 @@ public class ParquetMetadataConverter {
       public void visit(GroupType groupType) {
         SchemaElement element = new SchemaElement(groupType.getName());
         element.setRepetition_type(toParquetRepetition(groupType.getRepetition()));
-        if (groupType.getOriginalType() != null) {
-          element.setConverted_type(getConvertedType(groupType.getOriginalType()));
+        if (groupType.getLogicalTypeAnnotation() != null) {
+          element.setConverted_type(convertToConvertedType(groupType.getLogicalTypeAnnotation()));
+          element.setLogicalType(convertToLogicalType(groupType.getLogicalTypeAnnotation()));
+        }
+        if (groupType.getId() != null) {
+          element.setField_id(groupType.getId().intValue());
         }
         visitChildren(result, groupType, element);
       }
@@ -168,6 +202,185 @@ public class ParquetMetadataConverter {
     });
   }
 
+  LogicalType convertToLogicalType(LogicalTypeAnnotation logicalTypeAnnotation) {
+    return logicalTypeAnnotation.accept(LOGICAL_TYPE_ANNOTATION_VISITOR).get();
+  }
+
+  ConvertedType convertToConvertedType(LogicalTypeAnnotation logicalTypeAnnotation) {
+    return logicalTypeAnnotation.accept(CONVERTED_TYPE_CONVERTER_VISITOR).get();
+  }
+
+  static org.apache.parquet.format.TimeUnit convertUnit(LogicalTypeAnnotation.TimeUnit unit) {
+    switch (unit) {
+      case MICROS:
+        return org.apache.parquet.format.TimeUnit.MICROS(new MicroSeconds());
+      case MILLIS:
+        return org.apache.parquet.format.TimeUnit.MILLIS(new MilliSeconds());
+      default:
+        throw new RuntimeException("Unknown time unit " + unit);
+    }
+  }
+
+  private static class ConvertedTypeConverterVisitor implements LogicalTypeAnnotation.LogicalTypeAnnotationVisitor<ConvertedType> {
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.StringLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.UTF8);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.MapLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.MAP);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.ListLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.LIST);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.EnumLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.ENUM);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.DecimalLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.DECIMAL);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.DateLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.DATE);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.TimeLogicalTypeAnnotation logicalTypeAnnotation) {
+      switch (logicalTypeAnnotation.getUnit()) {
+        case MILLIS:
+          return Optional.of(ConvertedType.TIME_MILLIS);
+        case MICROS:
+          return Optional.of(ConvertedType.TIME_MICROS);
+        default:
+          throw new RuntimeException("Unknown converted type for " + logicalTypeAnnotation.toOriginalType());
+      }
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.TimestampLogicalTypeAnnotation logicalTypeAnnotation) {
+      switch (logicalTypeAnnotation.getUnit()) {
+        case MICROS:
+          return Optional.of(ConvertedType.TIMESTAMP_MICROS);
+        case MILLIS:
+          return Optional.of(ConvertedType.TIMESTAMP_MILLIS);
+        default:
+          throw new RuntimeException("Unknown converted type for " + logicalTypeAnnotation.toOriginalType());
+      }
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.IntLogicalTypeAnnotation logicalTypeAnnotation) {
+      boolean signed = logicalTypeAnnotation.isSigned();
+      switch (logicalTypeAnnotation.getBitWidth()) {
+        case 8:
+          return Optional.of(signed ? ConvertedType.INT_8 : ConvertedType.UINT_8);
+        case 16:
+          return Optional.of(signed ? ConvertedType.INT_16 : ConvertedType.UINT_16);
+        case 32:
+          return Optional.of(signed ? ConvertedType.INT_32 : ConvertedType.UINT_32);
+        case 64:
+          return Optional.of(signed ? ConvertedType.INT_64 : ConvertedType.UINT_64);
+        default:
+          throw new RuntimeException("Unknown original type " + logicalTypeAnnotation.toOriginalType());
+      }
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.JsonLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.JSON);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.BsonLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.BSON);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.IntervalLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.INTERVAL);
+    }
+
+    @Override
+    public Optional<ConvertedType> visit(LogicalTypeAnnotation.MapKeyValueTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(ConvertedType.MAP_KEY_VALUE);
+    }
+  }
+
+  private static class LogicalTypeConverterVisitor implements LogicalTypeAnnotation.LogicalTypeAnnotationVisitor<LogicalType> {
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.StringLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.STRING(new StringType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.MapLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.MAP(new MapType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.ListLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.LIST(new ListType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.EnumLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.ENUM(new EnumType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.DecimalLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.DECIMAL(new DecimalType(logicalTypeAnnotation.getScale(), logicalTypeAnnotation.getPrecision())));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.DateLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.DATE(new DateType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.TimeLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.TIME(new TimeType(logicalTypeAnnotation.isAdjustedToUTC(), convertUnit(logicalTypeAnnotation.getUnit()))));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.TimestampLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.TIMESTAMP(new TimestampType(logicalTypeAnnotation.isAdjustedToUTC(), convertUnit(logicalTypeAnnotation.getUnit()))));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.IntLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.INTEGER(new IntType((byte) logicalTypeAnnotation.getBitWidth(), logicalTypeAnnotation.isSigned())));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.JsonLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.JSON(new JsonType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.BsonLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.BSON(new BsonType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.IntervalLogicalTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.UNKNOWN(new NullType()));
+    }
+
+    @Override
+    public Optional<LogicalType> visit(LogicalTypeAnnotation.MapKeyValueTypeAnnotation logicalTypeAnnotation) {
+      return Optional.of(LogicalType.UNKNOWN(new NullType()));
+    }
+  }
+
   private void addRowGroup(ParquetMetadata parquetMetadata, List<RowGroup> rowGroups, BlockMetaData block) {
     //rowGroup.total_byte_size = ;
     List<ColumnChunkMetaData> columns = block.getColumns();
@@ -179,7 +392,7 @@ public class ParquetMetadataConverter {
           getType(columnMetaData.getType()),
           toFormatEncodings(columnMetaData.getEncodings()),
           Arrays.asList(columnMetaData.getPath().toArray()),
-          columnMetaData.getCodec().getParquetCompressionCodec(),
+          toFormatCodec(columnMetaData.getCodec()),
           columnMetaData.getValueCount(),
           columnMetaData.getTotalUncompressedSize(),
           columnMetaData.getTotalSize(),
@@ -230,6 +443,14 @@ public class ParquetMetadataConverter {
     }
 
     return cached;
+  }
+
+  private CompressionCodecName fromFormatCodec(CompressionCodec codec) {
+    return CompressionCodecName.valueOf(codec.toString());
+  }
+
+  private CompressionCodec toFormatCodec(CompressionCodecName codec) {
+    return CompressionCodec.valueOf(codec.toString());
   }
 
   public org.apache.parquet.column.Encoding getEncoding(Encoding encoding) {
@@ -285,25 +506,44 @@ public class ParquetMetadataConverter {
   }
 
   public static Statistics toParquetStatistics(
-      org.apache.parquet.column.statistics.Statistics statistics) {
-    Statistics stats = new Statistics();
+      org.apache.parquet.column.statistics.Statistics stats) {
+    Statistics formatStats = new Statistics();
     // Don't write stats larger than the max size rather than truncating. The
     // rationale is that some engines may use the minimum value in the page as
     // the true minimum for aggregations and there is no way to mark that a
     // value has been truncated and is a lower bound and not in the page.
-    if (!statistics.isEmpty() && statistics.isSmallerThan(MAX_STATS_SIZE)) {
-      stats.setNull_count(statistics.getNumNulls());
-      if (statistics.hasNonNullValue()) {
-        stats.setMax(statistics.getMaxBytes());
-        stats.setMin(statistics.getMinBytes());
+    if (!stats.isEmpty() && stats.isSmallerThan(MAX_STATS_SIZE)) {
+      formatStats.setNull_count(stats.getNumNulls());
+      if (stats.hasNonNullValue()) {
+        byte[] min = stats.getMinBytes();
+        byte[] max = stats.getMaxBytes();
+
+        // Fill the former min-max statistics only if the comparison logic is
+        // signed so the logic of V1 and V2 stats are the same (which is
+        // trivially true for equal min-max values)
+        if (sortOrder(stats.type()) == SortOrder.SIGNED || Arrays.equals(min, max)) {
+          formatStats.setMin(min);
+          formatStats.setMax(max);
+        }
+
+        if (isMinMaxStatsSupported(stats.type()) || Arrays.equals(min, max)) {
+          formatStats.setMin_value(min);
+          formatStats.setMax_value(max);
+        }
       }
     }
-    return stats;
+    return formatStats;
+  }
+
+  private static boolean isMinMaxStatsSupported(PrimitiveType type) {
+    return type.columnOrder().getColumnOrderName() == ColumnOrderName.TYPE_DEFINED_ORDER;
   }
 
   /**
-   * @deprecated Replaced by {@link #fromParquetStatistics(
-   * String createdBy, Statistics statistics, PrimitiveTypeName type)}
+   * @param statistics parquet format statistics
+   * @param type a primitive type name
+   * @return the statistics
+   * @deprecated will be removed in 2.0.0.
    */
   @Deprecated
   public static org.apache.parquet.column.statistics.Statistics fromParquetStatistics(Statistics statistics, PrimitiveTypeName type) {
@@ -311,33 +551,57 @@ public class ParquetMetadataConverter {
   }
 
   /**
-   * @deprecated Use {@link #fromParquetStatistics(String, Statistics, PrimitiveType)} instead.
+   * @param createdBy the created-by string from the file
+   * @param statistics parquet format statistics
+   * @param type a primitive type name
+   * @return the statistics
+   * @deprecated will be removed in 2.0.0.
    */
   @Deprecated
   public static org.apache.parquet.column.statistics.Statistics fromParquetStatistics(
       String createdBy, Statistics statistics, PrimitiveTypeName type) {
-    return fromParquetStatisticsInternal(createdBy, statistics, type);
+    return fromParquetStatisticsInternal(createdBy, statistics, new PrimitiveType(Repetition.OPTIONAL, type, "fake_type"));
   }
 
   // Visible for testing
   static org.apache.parquet.column.statistics.Statistics fromParquetStatisticsInternal
-      (String createdBy, Statistics statistics, PrimitiveTypeName type) {
+      (String createdBy, Statistics formatStats, PrimitiveType type) {
     // create stats object based on the column type
-    org.apache.parquet.column.statistics.Statistics stats = org.apache.parquet.column.statistics.Statistics.getStatsBasedOnType(type);
-    // If there was no statistics written to the footer, create an empty Statistics object and return
+    org.apache.parquet.column.statistics.Statistics.Builder statsBuilder =
+        org.apache.parquet.column.statistics.Statistics.getBuilderForReading(type);
 
-    boolean isSet = statistics != null && statistics.isSetMax() && statistics.isSetMin();
-    // NOTE: See docs in CorruptStatistics for explanation of why this check is needed
-    // The sort order is checked to avoid returning min/max stats that are not
-    // valid with the type's sort order. Currently, all stats are aggregated
-    // using a signed ordering, which isn't valid for strings or unsigned ints.
-    if (statistics != null && !CorruptStatistics.shouldIgnoreStatistics(createdBy, type)) {
-      if (isSet) {
-        stats.setMinMaxFromBytes(statistics.min.array(), statistics.max.array());
+    if (formatStats != null) {
+      // Use the new V2 min-max statistics over the former one if it is filled
+      if (formatStats.isSetMin_value() && formatStats.isSetMax_value()) {
+        byte[] min = formatStats.min_value.array();
+        byte[] max = formatStats.max_value.array();
+        if (isMinMaxStatsSupported(type) || Arrays.equals(min, max)) {
+          statsBuilder.withMin(min);
+          statsBuilder.withMax(max);
+        }
+        if (formatStats.isSetNull_count()) {
+          statsBuilder.withNumNulls(formatStats.null_count);
+        }
+      } else {
+        boolean isSet = formatStats.isSetMax() && formatStats.isSetMin();
+        boolean maxEqualsMin = isSet && Arrays.equals(formatStats.getMin(), formatStats.getMax());
+        // NOTE: See docs in CorruptStatistics for explanation of why this check is needed
+        // The sort order is checked to avoid returning min/max stats that are not
+        // valid with the type's sort order. In previous releases, all stats were
+        // aggregated using a signed byte-wise ordering, which isn't valid for all the
+        // types (e.g. strings, decimals etc.).
+        if (!CorruptStatistics.shouldIgnoreStatistics(createdBy, type.getPrimitiveTypeName()) && maxEqualsMin) {
+          if (isSet) {
+            statsBuilder.withMin(formatStats.min.array());
+            statsBuilder.withMax(formatStats.max.array());
+          }
+          if (formatStats.isSetNull_count()) {
+            statsBuilder.withNumNulls(formatStats.null_count);
+          }
+        }
       }
-      stats.setNumNulls(statistics.null_count);
     }
-    return stats;
+    return statsBuilder.build();
   }
 
   public org.apache.parquet.column.statistics.Statistics fromParquetStatistics(
@@ -393,108 +657,104 @@ public class ParquetMetadataConverter {
   }
 
   // Visible for testing
-  OriginalType getOriginalType(ConvertedType type) {
+  LogicalTypeAnnotation getOriginalType(ConvertedType type, SchemaElement schemaElement) {
     switch (type) {
       case UTF8:
-        return OriginalType.UTF8;
+        return LogicalTypeAnnotation.stringType();
       case MAP:
-        return OriginalType.MAP;
+        return LogicalTypeAnnotation.mapType();
       case MAP_KEY_VALUE:
-        return OriginalType.MAP_KEY_VALUE;
+        return LogicalTypeAnnotation.MapKeyValueTypeAnnotation.getInstance();
       case LIST:
-        return OriginalType.LIST;
+        return LogicalTypeAnnotation.listType();
       case ENUM:
-        return OriginalType.ENUM;
+        return LogicalTypeAnnotation.enumType();
       case DECIMAL:
-        return OriginalType.DECIMAL;
+        int scale = (schemaElement == null ? 0 : schemaElement.scale);
+        int precision = (schemaElement == null ? 0 : schemaElement.precision);
+        return LogicalTypeAnnotation.decimalType(scale, precision);
       case DATE:
-        return OriginalType.DATE;
+        return LogicalTypeAnnotation.dateType();
       case TIME_MILLIS:
-        return OriginalType.TIME_MILLIS;
+        return LogicalTypeAnnotation.timeType(true, LogicalTypeAnnotation.TimeUnit.MILLIS);
       case TIME_MICROS:
-        return OriginalType.TIME_MICROS;
+        return LogicalTypeAnnotation.timeType(true, LogicalTypeAnnotation.TimeUnit.MICROS);
       case TIMESTAMP_MILLIS:
-        return OriginalType.TIMESTAMP_MILLIS;
+        return LogicalTypeAnnotation.timestampType(true, LogicalTypeAnnotation.TimeUnit.MILLIS);
       case TIMESTAMP_MICROS:
-        return OriginalType.TIMESTAMP_MICROS;
+        return LogicalTypeAnnotation.timestampType(true, LogicalTypeAnnotation.TimeUnit.MICROS);
       case INTERVAL:
-        return OriginalType.INTERVAL;
+        return LogicalTypeAnnotation.IntervalLogicalTypeAnnotation.getInstance();
       case INT_8:
-        return OriginalType.INT_8;
+        return LogicalTypeAnnotation.intType(8, true);
       case INT_16:
-        return OriginalType.INT_16;
+        return LogicalTypeAnnotation.intType(16, true);
       case INT_32:
-        return OriginalType.INT_32;
+        return LogicalTypeAnnotation.intType(32, true);
       case INT_64:
-        return OriginalType.INT_64;
+        return LogicalTypeAnnotation.intType(64, true);
       case UINT_8:
-        return OriginalType.UINT_8;
+        return LogicalTypeAnnotation.intType(8, false);
       case UINT_16:
-        return OriginalType.UINT_16;
+        return LogicalTypeAnnotation.intType(16, false);
       case UINT_32:
-        return OriginalType.UINT_32;
+        return LogicalTypeAnnotation.intType(32, false);
       case UINT_64:
-        return OriginalType.UINT_64;
+        return LogicalTypeAnnotation.intType(64, false);
       case JSON:
-        return OriginalType.JSON;
+        return LogicalTypeAnnotation.jsonType();
       case BSON:
-        return OriginalType.BSON;
+        return LogicalTypeAnnotation.bsonType();
       default:
-        throw new RuntimeException("Unknown converted type " + type);
+        throw new RuntimeException("Can't convert converted type to logical type, unknown converted type " + type);
     }
   }
 
-  // Visible for testing
-  ConvertedType getConvertedType(OriginalType type) {
-    switch (type) {
-      case UTF8:
-        return ConvertedType.UTF8;
+  LogicalTypeAnnotation getOriginalType(LogicalType type) {
+    switch (type.getSetField()) {
       case MAP:
-        return ConvertedType.MAP;
-      case MAP_KEY_VALUE:
-        return ConvertedType.MAP_KEY_VALUE;
-      case LIST:
-        return ConvertedType.LIST;
-      case ENUM:
-        return ConvertedType.ENUM;
-      case DECIMAL:
-        return ConvertedType.DECIMAL;
-      case DATE:
-        return ConvertedType.DATE;
-      case TIME_MILLIS:
-        return ConvertedType.TIME_MILLIS;
-      case TIME_MICROS:
-        return ConvertedType.TIME_MICROS;
-      case TIMESTAMP_MILLIS:
-        return ConvertedType.TIMESTAMP_MILLIS;
-      case TIMESTAMP_MICROS:
-        return ConvertedType.TIMESTAMP_MICROS;
-      case INTERVAL:
-        return ConvertedType.INTERVAL;
-      case INT_8:
-        return ConvertedType.INT_8;
-      case INT_16:
-        return ConvertedType.INT_16;
-      case INT_32:
-        return ConvertedType.INT_32;
-      case INT_64:
-        return ConvertedType.INT_64;
-      case UINT_8:
-        return ConvertedType.UINT_8;
-      case UINT_16:
-        return ConvertedType.UINT_16;
-      case UINT_32:
-        return ConvertedType.UINT_32;
-      case UINT_64:
-        return ConvertedType.UINT_64;
-      case JSON:
-        return ConvertedType.JSON;
+        return LogicalTypeAnnotation.mapType();
       case BSON:
-        return ConvertedType.BSON;
+        return LogicalTypeAnnotation.bsonType();
+      case DATE:
+        return LogicalTypeAnnotation.dateType();
+      case ENUM:
+        return LogicalTypeAnnotation.enumType();
+      case JSON:
+        return LogicalTypeAnnotation.jsonType();
+      case LIST:
+        return LogicalTypeAnnotation.listType();
+      case TIME:
+        TimeType time = type.getTIME();
+        return LogicalTypeAnnotation.timeType(time.isAdjustedToUTC, convertTimeUnit(time.unit));
+      case STRING:
+        return LogicalTypeAnnotation.stringType();
+      case DECIMAL:
+        DecimalType decimal = type.getDECIMAL();
+        return LogicalTypeAnnotation.decimalType(decimal.scale, decimal.precision);
+      case INTEGER:
+        IntType integer = type.getINTEGER();
+        return LogicalTypeAnnotation.intType(integer.bitWidth, integer.isSigned);
+      case UNKNOWN:
+        return null;
+      case TIMESTAMP:
+        TimestampType timestamp = type.getTIMESTAMP();
+        return LogicalTypeAnnotation.timestampType(timestamp.isAdjustedToUTC, convertTimeUnit(timestamp.unit));
       default:
-        throw new RuntimeException("Unknown original type " + type);
-     }
-   }
+        throw new RuntimeException("Unknown logical type " + type);
+    }
+  }
+
+  private LogicalTypeAnnotation.TimeUnit convertTimeUnit(TimeUnit unit) {
+    switch (unit.getSetField()) {
+      case MICROS:
+        return LogicalTypeAnnotation.TimeUnit.MICROS;
+      case MILLIS:
+        return LogicalTypeAnnotation.TimeUnit.MILLIS;
+      default:
+        throw new RuntimeException("Unknown time unit " + unit);
+    }
+  }
 
   private static void addKeyValue(FileMetaData fileMetaData, String key, String value) {
     KeyValue keyValue = new KeyValue(key);
@@ -516,9 +776,9 @@ public class ParquetMetadataConverter {
 
   /**
    * [ startOffset, endOffset )
-   * @param startOffset
-   * @param endOffset
-   * @return the filter
+   * @param startOffset a start offset (inclusive)
+   * @param endOffset an end offset (exclusive)
+   * @return a range filter from the offsets
    */
   public static MetadataFilter range(long startOffset, long endOffset) {
     return new RangeMetadataFilter(startOffset, endOffset);
@@ -557,7 +817,6 @@ public class ParquetMetadataConverter {
 
   /**
    * [ startOffset, endOffset )
-   * @author Julien Le Dem
    */
   // Visible for testing
   static final class RangeMetadataFilter extends MetadataFilter {
@@ -682,7 +941,7 @@ public class ParquetMetadataConverter {
   }
 
   public ParquetMetadata fromParquetMetadata(FileMetaData parquetMetadata) throws IOException {
-    MessageType messageType = fromParquetSchema(parquetMetadata.getSchema());
+    MessageType messageType = fromParquetSchema(parquetMetadata.getSchema(), parquetMetadata.getColumn_orders());
     List<BlockMetaData> blocks = new ArrayList<BlockMetaData>();
     List<RowGroup> row_groups = parquetMetadata.getRow_groups();
     if (row_groups != null) {
@@ -701,8 +960,8 @@ public class ParquetMetadataConverter {
           ColumnPath path = getPath(metaData);
           ColumnChunkMetaData column = ColumnChunkMetaData.get(
               path,
-              messageType.getType(path.toArray()).asPrimitiveType().getPrimitiveTypeName(),
-              CompressionCodecName.fromParquet(metaData.codec),
+              messageType.getType(path.toArray()).asPrimitiveType(),
+              fromFormatCodec(metaData.codec),
               convertEncodingStats(metaData.getEncoding_stats()),
               fromFormatEncodings(metaData.encodings),
               fromParquetStatistics(
@@ -741,17 +1000,22 @@ public class ParquetMetadataConverter {
   }
 
   // Visible for testing
-  MessageType fromParquetSchema(List<SchemaElement> schema) {
+  MessageType fromParquetSchema(List<SchemaElement> schema, List<ColumnOrder> columnOrders) {
     Iterator<SchemaElement> iterator = schema.iterator();
     SchemaElement root = iterator.next();
     Types.MessageTypeBuilder builder = Types.buildMessage();
-    buildChildren(builder, iterator, root.getNum_children());
+    if (root.isSetField_id()) {
+      builder.id(root.field_id);
+    }
+    buildChildren(builder, iterator, root.getNum_children(), columnOrders, 0);
     return builder.named(root.name);
   }
 
   private void buildChildren(Types.GroupBuilder builder,
                              Iterator<SchemaElement> schema,
-                             int childrenCount) {
+                             int childrenCount,
+                             List<ColumnOrder> columnOrders,
+                             int columnCount) {
     for (int i = 0; i < childrenCount; i++) {
       SchemaElement schemaElement = schema.next();
 
@@ -770,21 +1034,39 @@ public class ParquetMetadataConverter {
         if (schemaElement.isSetScale()) {
           primitiveBuilder.scale(schemaElement.scale);
         }
+        if (columnOrders != null) {
+          org.apache.parquet.schema.ColumnOrder columnOrder = fromParquetColumnOrder(columnOrders.get(columnCount));
+          // As per parquet format 2.4.0 no UNDEFINED order is supported. So, set undefined column order for the types
+          // where ordering is not supported.
+          if (columnOrder.getColumnOrderName() == ColumnOrderName.TYPE_DEFINED_ORDER
+              && (schemaElement.type == Type.INT96 || schemaElement.converted_type == ConvertedType.INTERVAL)) {
+            columnOrder = org.apache.parquet.schema.ColumnOrder.undefined();
+          }
+          primitiveBuilder.columnOrder(columnOrder);
+        }
         childBuilder = primitiveBuilder;
 
       } else {
         childBuilder = builder.group(fromParquetRepetition(schemaElement.repetition_type));
-        buildChildren((Types.GroupBuilder) childBuilder, schema, schemaElement.num_children);
+        buildChildren((Types.GroupBuilder) childBuilder, schema, schemaElement.num_children, columnOrders, columnCount);
       }
 
+      if (schemaElement.isSetLogicalType()) {
+        childBuilder.as(getOriginalType(schemaElement.logicalType));
+      }
       if (schemaElement.isSetConverted_type()) {
-        childBuilder.as(getOriginalType(schemaElement.converted_type));
+        LogicalTypeAnnotation originalType = getOriginalType(schemaElement.converted_type, schemaElement);
+        LogicalTypeAnnotation newLogicalType = schemaElement.isSetLogicalType() ? getOriginalType(schemaElement.logicalType) : null;
+        if (!originalType.equals(newLogicalType)) {
+          childBuilder.as(originalType);
+        }
       }
       if (schemaElement.isSetField_id()) {
         childBuilder.id(schemaElement.field_id);
       }
 
       childBuilder.named(schemaElement.name);
+      ++columnCount;
     }
   }
 
@@ -796,6 +1078,14 @@ public class ParquetMetadataConverter {
   // Visible for testing
   Repetition fromParquetRepetition(FieldRepetitionType repetition) {
     return Repetition.valueOf(repetition.name());
+  }
+
+  private static org.apache.parquet.schema.ColumnOrder fromParquetColumnOrder(ColumnOrder columnOrder) {
+    if (columnOrder.isSetTYPE_ORDER()) {
+      return org.apache.parquet.schema.ColumnOrder.typeDefined();
+    }
+    // The column order is not yet supported by this API
+    return org.apache.parquet.schema.ColumnOrder.undefined();
   }
 
   @Deprecated
@@ -846,8 +1136,7 @@ public class ParquetMetadataConverter {
         getEncoding(dlEncoding),
         getEncoding(rlEncoding)));
     if (!statistics.isEmpty()) {
-      pageHeader.getData_page_header().setStatistics(
-          toParquetStatistics(statistics));
+      pageHeader.getData_page_header().setStatistics(toParquetStatistics(statistics));
     }
     return pageHeader;
   }

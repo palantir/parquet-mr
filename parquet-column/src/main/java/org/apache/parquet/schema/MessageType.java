@@ -26,9 +26,6 @@ import org.apache.parquet.io.InvalidRecordException;
 
 /**
  * The root of a schema
- *
- * @author Julien Le Dem
- *
  */
 public final class MessageType extends GroupType {
 
@@ -72,6 +69,7 @@ public final class MessageType extends GroupType {
   }
 
   /**
+   * @param path an array of strings representing the name path in this type
    * @return the max repetition level that might be needed to encode the
    * type at 'path'.
    */
@@ -80,6 +78,7 @@ public final class MessageType extends GroupType {
   }
 
   /**
+   * @param path an array of strings representing the name path in this type
    * @return the max repetition level that might be needed to encode the
    * type at 'path'.
    */
@@ -95,8 +94,7 @@ public final class MessageType extends GroupType {
     int maxRep = getMaxRepetitionLevel(path);
     int maxDef = getMaxDefinitionLevel(path);
     PrimitiveType type = getType(path).asPrimitiveType();
-    return new ColumnDescriptor(path, type.getPrimitiveTypeName(),
-                                type.getTypeLength(), maxRep, maxDef);
+    return new ColumnDescriptor(path, type, maxRep, maxDef);
   }
 
   public List<String[]> getPaths() {
@@ -111,8 +109,7 @@ public final class MessageType extends GroupType {
       PrimitiveType primitiveType = getType(path).asPrimitiveType();
       columns.add(new ColumnDescriptor(
                       path,
-                      primitiveType.getPrimitiveTypeName(),
-                      primitiveType.getTypeLength(),
+                      primitiveType,
                       getMaxRepetitionLevel(path),
                       getMaxDefinitionLevel(path)));
     }

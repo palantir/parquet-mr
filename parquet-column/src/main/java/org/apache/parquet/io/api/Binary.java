@@ -33,6 +33,7 @@ import java.util.Arrays;
 
 import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.io.ParquetEncodingException;
+import org.apache.parquet.schema.PrimitiveComparator;
 
 import static org.apache.parquet.bytes.BytesUtils.UTF8;
 
@@ -71,11 +72,13 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
 
   abstract boolean equals(Binary other);
 
+  /**
+   * @deprecated will be removed in 2.0.0. The comparison logic depends on the related logical type therefore this one
+   * might not be correct. The {@link java.util.Comparator} implementation for the related type available at
+   * {@link org.apache.parquet.schema.PrimitiveType#comparator} should be used instead.
+   */
+  @Deprecated
   abstract public int compareTo(Binary other);
-
-  abstract int compareTo(byte[] bytes, int offset, int length);
-
-  abstract int compareTo(ByteBuffer bytes, int offset, int length);
 
   abstract public ByteBuffer toByteBuffer();
 
@@ -189,17 +192,7 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
 
     @Override
     public int compareTo(Binary other) {
-      return other.compareTo(value, offset, length);
-    }
-
-    @Override
-    int compareTo(byte[] other, int otherOffset, int otherLength) {
-      return Binary.compareTwoByteArrays(value, offset, length, other, otherOffset, otherLength);
-    }
-
-    @Override
-    int compareTo(ByteBuffer bytes, int otherOffset, int otherLength) {
-      return Binary.compareByteArrayToByteBuffer(value, offset, length, bytes, otherOffset, otherLength);
+      return PrimitiveComparator.UNSIGNED_LEXICOGRAPHICAL_BINARY_COMPARATOR.compare(this, other);
     }
 
     @Override
@@ -345,20 +338,10 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
 
     @Override
     public int compareTo(Binary other) {
-      return other.compareTo(value, 0, value.length);
+      return PrimitiveComparator.UNSIGNED_LEXICOGRAPHICAL_BINARY_COMPARATOR.compare(this, other);
     }
 
-    @Override
-    int compareTo(byte[] other, int otherOffset, int otherLength) {
-      return Binary.compareTwoByteArrays(value, 0, value.length, other, otherOffset, otherLength);
-    }
-
-    @Override
-    int compareTo(ByteBuffer bytes, int otherOffset, int otherLength) {
-      return Binary.compareByteArrayToByteBuffer(value, 0, value.length, bytes, otherOffset, otherLength);
-    }
-
-    @Override
+   @Override
     public ByteBuffer toByteBuffer() {
       return ByteBuffer.wrap(value);
     }
@@ -505,31 +488,12 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
 
     @Override
     public int compareTo(Binary other) {
-      if (value.hasArray()) {
-        return other.compareTo(value.array(), value.arrayOffset() + offset, length);
-      } else {
-        return other.compareTo(value, offset, length);
-      }
-    }
-
-    @Override
-    int compareTo(byte[] other, int otherOffset, int otherLength) {
-      if (value.hasArray()) {
-        return Binary.compareTwoByteArrays(value.array(), value.arrayOffset() + offset, length,
-            other, otherOffset, otherLength);
-      } {
-        return Binary.compareByteBufferToByteArray(value, offset, length, other, otherOffset, otherLength);
-      }
-    }
-
-    @Override
-    int compareTo(ByteBuffer bytes, int otherOffset, int otherLength) {
-      return Binary.compareTwoByteBuffers(value, offset, length, bytes, otherOffset, otherLength);
+      return PrimitiveComparator.UNSIGNED_LEXICOGRAPHICAL_BINARY_COMPARATOR.compare(this, other);
     }
 
     @Override
     public ByteBuffer toByteBuffer() {
-      ByteBuffer ret = value.slice();
+      ByteBuffer ret = value.duplicate();
       ret.position(offset);
       ret.limit(offset + length);
       return ret;
