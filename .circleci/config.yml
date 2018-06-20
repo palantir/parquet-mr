@@ -115,7 +115,6 @@ jobs:
 
   run-tests:
     <<: *defaults
-    # Spark runs a lot of tests in parallel, we need 16 GB of RAM for this
     resource_class: xlarge
     steps:
       - *checkout-code
@@ -124,11 +123,8 @@ jobs:
       - *restore-build-binaries-cache
       - run:
           name: Run all tests
-          comannd: ./build/mvn test | tee -a "/tmp/run-tests.log"
+          command: ./build/mvn test
           no_output_timeout: 15m
-      - store_artifacts:
-          path: /tmp/run-tests.log
-          destination: run-tests.log
       - run:
           name: Collect unit tests
           command: mkdir -p /tmp/unit-tests && find . -name unit-tests.log -exec rsync -R {} /tmp/unit-tests/ \;
@@ -166,10 +162,8 @@ jobs:
       - run: echo "realm=Bintray API Realm" >> .credentials
       - run: echo "host=api.bintray.com" >> .credentials
       - deploy:
-          command: dev/publish.sh
-      - store_artifacts:
-          path: /tmp/publish_artifacts.log
-          destination: publish_artifacts.log
+          name: Deploy all the things
+          command: ./build/mvn -T1C --settings $tmp_settings -DskipTests deploy
 
 workflows:
   version: 2
