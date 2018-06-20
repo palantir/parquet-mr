@@ -120,7 +120,7 @@ jobs:
     steps:
       - *checkout-code
       - attach_workspace:
-        at: .
+          at: .
       - *restore-build-binaries-cache
       - run:
           name: Run all tests
@@ -157,7 +157,7 @@ jobs:
     <<: *defaults
     steps:
       - attach_workspace:
-        at: .
+          at: .
       - restore_cache:
           key: v1-maven-dependency-cache-versioned-{{ checksum "pom.xml" }}
       - *restore-build-binaries-cache
@@ -182,11 +182,10 @@ workflows:
             - build-maven
           <<: *all-branches-and-tags
       - build-maven-versioned:
+        #<<: *deployable-branches-and-tags
           <<: *all-branches-and-tags
       - deploy:
           requires:
-            - build-maven
-            # Tests
             - run-tests
             - build-maven-versioned
           <<: *deployable-branches-and-tags
