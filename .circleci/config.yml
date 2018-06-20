@@ -126,14 +126,10 @@ jobs:
       - *restore-build-binaries-cache
       - run:
           name: Run all tests
-          command: ./build/mvn test
+          command: ./build/mvn -T1C test
           no_output_timeout: 15m
-      - run:
-          name: Collect unit tests
-          command: mkdir -p /tmp/unit-tests && find . -name unit-tests.log -exec rsync -R {} /tmp/unit-tests/ \;
-          when: always
-      - store_artifacts:
-          path: /tmp/unit-tests
+      - store_test_results:
+          path: target/test-reports
 
   build-maven-versioned:
     <<: *defaults
