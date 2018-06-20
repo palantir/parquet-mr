@@ -129,7 +129,7 @@ jobs:
           command: ./build/mvn -T1C test
           no_output_timeout: 15m
       - store_test_results:
-          path: target/test-reports
+          path: target/surefire-reports
 
   build-maven-versioned:
     <<: *defaults
