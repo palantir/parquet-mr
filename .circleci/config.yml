@@ -99,14 +99,11 @@ jobs:
             # Fallback - see https://circleci.com/docs/2.0/configuration-reference/#example-2
             - maven-dependency-cache-
       - *restore-build-binaries-cache
-      - run: ./build/mvn -T1C -DskipTests install | tee -a "/tmp/mvn-install.log"
+      - run: ./build/mvn -T1C -B -DskipTests install
       - persist_to_workspace:
           root: .
           paths:
             - '*/target'
-      - store_artifacts:
-          path: /tmp/mvn-install.log
-          destination: mvn-install.log
       - save_cache:
           key: build-binaries-{{ checksum "build/mvn" }}
           paths:
