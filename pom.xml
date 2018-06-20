@@ -443,6 +443,7 @@
             <exclude>thrift-0.7.0.tar.gz</exclude>
             <exclude>**/dependency-reduced-pom.xml</exclude>
             <exclude>.circleci/config.yml</exclude>
+            <exclude>dev/set_version_and_package.sh</exclude>
           </excludes>
         </configuration>
       </plugin>
