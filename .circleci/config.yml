@@ -126,7 +126,7 @@ jobs:
       - *restore-build-binaries-cache
       - run:
           name: Run all tests
-          command: ./build/mvn -T1C test
+          command: ./build/mvn test
           no_output_timeout: 15m
       - run:
           name: Save test results
