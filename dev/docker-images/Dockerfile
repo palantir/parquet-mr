@@ -103,6 +103,7 @@ SHELL ["/bin/bash", "-eux", "-o", "pipefail", "-c"]
 RUN PROTOC_URL="https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip" \
   && curl --silent --show-error --location --fail --retry 3 --output /tmp/protoc-linux-x86_64.zip $PROTOC_URL \
   && unzip /tmp/protoc-linux-x86_64.zip -d /usr \
+  && chmod +x /usr/bin/protoc \
   && rm -rf /tmp/protoc-linux-x86_64.zip \
   && protoc --version
 
