@@ -113,7 +113,9 @@ RUN THRIFT_URL="http://archive.apache.org/dist/thrift/0.7.0/thrift-0.7.0.tar.gz"
   && chmod +x ./configure \
   && ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-python \
   && make install \
-  && rm -rf /tmp/thrift.tar.gz
+  && rm -rf /tmp/thrift*
+# Below line returns exit code of 1
+#RUN thrift -version
 
 # USER SPECIFIC INSTALLS
 
