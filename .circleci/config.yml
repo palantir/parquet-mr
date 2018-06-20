@@ -28,6 +28,12 @@ step_templates:
       keys:
         - build-binaries-{{ checksum "build/mvn" }}
         - build-binaries-
+  restore-maven-dependency-cache: &restore-maven-dependency-cache
+    restore_cache:
+      keys:
+        - maven-dependency-cache-{{ checksum "pom.xml" }}
+        # Fallback - see https://circleci.com/docs/2.0/configuration-reference/#example-2
+        - maven-dependency-cache-
   checkout-code: &checkout-code
     run:
       name: Checkout code
@@ -93,11 +99,7 @@ jobs:
     <<: *defaults
     steps:
       - *checkout-code
-      - restore_cache:
-          keys:
-            - maven-dependency-cache-{{ checksum "pom.xml" }}
-            # Fallback - see https://circleci.com/docs/2.0/configuration-reference/#example-2
-            - maven-dependency-cache-
+      - *restore-maven-dependency-cache
       - *restore-build-binaries-cache
       - run: ./build/mvn -T1C -B -DskipTests install
       - persist_to_workspace:
@@ -120,6 +122,7 @@ jobs:
       - *checkout-code
       - attach_workspace:
           at: .
+      - *restore-maven-dependency-cache
       - *restore-build-binaries-cache
       - run:
           name: Run all tests
@@ -136,8 +139,7 @@ jobs:
     <<: *defaults
     steps:
       - *checkout-code
-      - restore_cache:
-          key: maven-dependency-cache-{{ checksum "pom.xml" }}
+      - *restore-maven-dependency-cache
       - *restore-build-binaries-cache
       - run:
           command: dev/set_version_and_package.sh
@@ -146,7 +148,7 @@ jobs:
           paths:
             - '*/target'
       - save_cache:
-          key: v1-maven-dependency-cache-versioned-{{ checksum "pom.xml" }}
+          key: maven-dependency-cache-versioned-{{ checksum "pom.xml" }}
           paths: ~/.m2
 
   deploy:
@@ -155,7 +157,9 @@ jobs:
       - attach_workspace:
           at: .
       - restore_cache:
-          key: v1-maven-dependency-cache-versioned-{{ checksum "pom.xml" }}
+          keys:
+            - maven-dependency-cache-versioned-{{ checksum "pom.xml" }}
+            - maven-dependency-cache-versioned-
       - *restore-build-binaries-cache
       - run: echo "user=$BINTRAY_USERNAME" > .credentials
       - run: echo "password=$BINTRAY_PASSWORD" >> .credentials
