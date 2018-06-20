@@ -171,8 +171,8 @@ public class TestMemoryManager {
   public TemporaryFolder temp = new TemporaryFolder();
 
   private RecordWriter createWriter(int index) throws Exception {
-    File file = temp.newFile(String.valueOf(index) + ".parquet");
-    if (!file.delete()) {
+    File file = new File(temp.getRoot(), String.valueOf(index) + ".parquet");
+    if (file.exists() && !file.delete()) {
       throw new RuntimeException("Could not delete file: " + file);
     }
     RecordWriter writer = parquetOutputFormat.getRecordWriter(

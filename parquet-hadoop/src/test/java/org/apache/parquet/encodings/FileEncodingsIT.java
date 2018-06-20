@@ -18,16 +18,6 @@
  */
 package org.apache.parquet.encodings;
 
-import static junit.framework.Assert.assertEquals;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.parquet.bytes.BytesInput;
@@ -52,18 +42,20 @@ import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.io.api.Binary;
 import org.apache.parquet.io.api.PrimitiveConverter;
-import org.apache.parquet.schema.MessageType;
-import org.apache.parquet.schema.PrimitiveType;
+import org.apache.parquet.schema.*;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
-import org.apache.parquet.schema.Types;
 import org.apache.parquet.statistics.RandomValues;
 import org.apache.parquet.statistics.TestStatistics;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.*;
+
+import static junit.framework.Assert.assertEquals;
 
 /**
  * This class contains test cases to validate each data type encoding.
@@ -73,7 +65,7 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class FileEncodingsIT {
   private static final int RANDOM_SEED = 1;
-  private static final int RECORD_COUNT = 20000;
+  private static final int RECORD_COUNT = 2000000;
   private static final int FIXED_LENGTH = 60;
   private static final int TEST_PAGE_SIZE = 16 * 1024; // 16K
   private static final int TEST_ROW_GROUP_SIZE = 128 * 1024; // 128K
