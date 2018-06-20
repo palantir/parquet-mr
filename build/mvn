@@ -85,7 +85,7 @@ install_mvn() {
   fi
 }
 
-# Install the proper version of Scala, Zinc and Maven for the build
+# Install the proper version of Maven for the build
 install_mvn
 
 # Reset the current working directory
@@ -97,4 +97,4 @@ export MAVEN_OPTS=${MAVEN_OPTS:-"$_COMPILE_JVM_OPTS"}
 echo "Using \`mvn\` from path: $MVN_BIN" 1>&2
 
 # Last, call the `mvn` command as usual
-${MVN_BIN} -DzincPort=${ZINC_PORT} -e "$@"
+${MVN_BIN} -e "$@"
