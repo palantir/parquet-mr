@@ -22,7 +22,7 @@ IMAGE_NAME = palantirtechnologies/circle-parquet
 all: docker
 
 docker: Dockerfile
-	time docker build base -t ${IMAGE_NAME}
+	time docker build . -t ${IMAGE_NAME}
 
 publish: docker
 	docker push ${IMAGE_NAME}

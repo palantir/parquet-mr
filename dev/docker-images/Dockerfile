@@ -100,20 +100,20 @@ RUN groupadd --gid 3434 circleci \
 SHELL ["/bin/bash", "-eux", "-o", "pipefail", "-c"]
 
 # INSTALL PROTOC
-RUN PROTOC_URL="https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip"
-  && curl --silent --show-error --location --fail --retry 3 --output /tmp/protoc-linux-x86_64.tar.gz $PROTOC_URL \
-  && tar -C /usr/bin -xzvf /tmp/protoc-linux-x86_64.tar.gz \
-  && rm -rf /tmp/protoc-linux-x86_64.tar.gz \
+RUN PROTOC_URL="https://github.com/google/protobuf/releases/download/v3.2.0/protoc-3.2.0-linux-x86_64.zip" \
+  && curl --silent --show-error --location --fail --retry 3 --output /tmp/protoc-linux-x86_64.zip $PROTOC_URL \
+  && unzip /tmp/protoc-linux-x86_64.zip -d /usr \
+  && rm -rf /tmp/protoc-linux-x86_64.zip \
   && protoc --version
 
-RUN THRIFT_URL="http://archive.apache.org/dist/thrift/0.7.0/thrift-0.7.0.tar.gz"
+RUN THRIFT_URL="http://archive.apache.org/dist/thrift/0.7.0/thrift-0.7.0.tar.gz" \
   && curl --silent --show-error --location --fail --retry 3 --output /tmp/thrift.tar.gz $THRIFT_URL \
-  && tar -xzvf /tmp/thrift.tar.gz \
+  && tar -C /tmp -xzvf /tmp/thrift.tar.gz \
   && cd /tmp/thrift-0.7.0 \
   && chmod +x ./configure \
-  && ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang \
-  && make install
-  && rm -rf /tmp/thrift.tar.gz \
+  && ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-python \
+  && make install \
+  && rm -rf /tmp/thrift.tar.gz
 
 # USER SPECIFIC INSTALLS
 
