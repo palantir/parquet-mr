@@ -592,7 +592,6 @@ public class TestParquetFileWriter {
 
     MessageType schema = MessageTypeParser.parseMessageType(writeSchema);
     Configuration configuration = new Configuration();
-    configuration.setBoolean("parquet.strings.signed-min-max.enabled", true);
     GroupWriteSupport.setSchema(schema, configuration);
 
     ParquetWriter<Group> writer = new ParquetWriter<Group>(path, configuration, new GroupWriteSupport());

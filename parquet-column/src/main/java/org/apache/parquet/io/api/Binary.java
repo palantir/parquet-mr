@@ -630,33 +630,4 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
     return true;
   }
 
-  private static final int compareByteBufferToByteArray(ByteBuffer buf, int offset1, int length1,
-                                                        byte[] array, int offset2, int length2) {
-    return compareTwoByteArrays(buf.array(), offset1, length1, array, offset2, length2);
-  }
-
-  private static final int compareByteArrayToByteBuffer(byte[] array1, int offset1, int length1,
-                                                        ByteBuffer buf, int offset2, int length2) {
-    return compareTwoByteArrays(array1, offset1, length1, buf.array(), offset2, length2);
-  }
-
-  private static final int compareTwoByteBuffers(ByteBuffer buf1, int offset1, int length1,
-                                                        ByteBuffer buf2, int offset2, int length2) {
-    return compareTwoByteArrays(buf1.array(), offset1, length1, buf2.array(), offset2, length2);
-  }
-
-  private static final int compareTwoByteArrays(byte[] array1, int offset1, int length1,
-                                                byte[] array2, int offset2, int length2) {
-    if (array1 == null && array2 == null) return 0;
-    if (array1 == array2 && offset1 == offset2 && length1 == length2) return 0;
-    int min_length = Math.min(length1, length2);
-    for (int i = 0; i < min_length; i++) {
-      int value1 = array1[i + offset1] & 0xFF;
-      int value2 = array2[i + offset2] & 0xFF;
-      if (value1 != value2) {
-        return value2 - value1;
-      }
-    }
-    return length2 - length1;
-  }
 }

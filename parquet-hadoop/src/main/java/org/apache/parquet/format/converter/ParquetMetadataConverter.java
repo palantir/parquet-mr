@@ -36,8 +36,29 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.CorruptStatistics;
-import org.apache.parquet.column.EncodingStats;
+import org.apache.parquet.ParquetReadOptions;
+import org.apache.parquet.format.BsonType;
+import org.apache.parquet.format.CompressionCodec;
+import org.apache.parquet.format.DateType;
+import org.apache.parquet.format.DecimalType;
+import org.apache.parquet.format.EnumType;
+import org.apache.parquet.format.IntType;
+import org.apache.parquet.format.JsonType;
+import org.apache.parquet.format.ListType;
+import org.apache.parquet.format.LogicalType;
+import org.apache.parquet.format.MapType;
+import org.apache.parquet.format.MicroSeconds;
+import org.apache.parquet.format.MilliSeconds;
+import org.apache.parquet.format.NullType;
+import org.apache.parquet.format.PageEncodingStats;
+import org.apache.parquet.format.StringType;
+import org.apache.parquet.format.TimeType;
+import org.apache.parquet.format.TimeUnit;
+import org.apache.parquet.format.TimestampType;
+import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.format.ColumnChunk;
 import org.apache.parquet.format.ColumnMetaData;
 import org.apache.parquet.format.ColumnOrder;
@@ -49,7 +70,6 @@ import org.apache.parquet.format.Encoding;
 import org.apache.parquet.format.FieldRepetitionType;
 import org.apache.parquet.format.FileMetaData;
 import org.apache.parquet.format.KeyValue;
-import org.apache.parquet.format.PageEncodingStats;
 import org.apache.parquet.format.PageHeader;
 import org.apache.parquet.format.PageType;
 import org.apache.parquet.format.RowGroup;
@@ -59,8 +79,8 @@ import org.apache.parquet.format.Type;
 import org.apache.parquet.format.TypeDefinedOrder;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
-import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
+import org.apache.parquet.column.EncodingStats;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.ParquetDecodingException;
 import org.apache.parquet.schema.ColumnOrder.ColumnOrderName;
@@ -518,13 +538,8 @@ public class ParquetMetadataConverter {
         byte[] min = stats.getMinBytes();
         byte[] max = stats.getMaxBytes();
 
-        // Fill the former min-max statistics only if the comparison logic is
-        // signed so the logic of V1 and V2 stats are the same (which is
-        // trivially true for equal min-max values)
-        if (sortOrder(stats.type()) == SortOrder.SIGNED || Arrays.equals(min, max)) {
-          formatStats.setMin(min);
-          formatStats.setMax(max);
-        }
+        formatStats.setMin(min);
+        formatStats.setMax(max);
 
         if (isMinMaxStatsSupported(stats.type()) || Arrays.equals(min, max)) {
           formatStats.setMin_value(min);
@@ -584,13 +599,10 @@ public class ParquetMetadataConverter {
         }
       } else {
         boolean isSet = formatStats.isSetMax() && formatStats.isSetMin();
-        boolean maxEqualsMin = isSet && Arrays.equals(formatStats.getMin(), formatStats.getMax());
         // NOTE: See docs in CorruptStatistics for explanation of why this check is needed
-        // The sort order is checked to avoid returning min/max stats that are not
-        // valid with the type's sort order. In previous releases, all stats were
-        // aggregated using a signed byte-wise ordering, which isn't valid for all the
-        // types (e.g. strings, decimals etc.).
-        if (!CorruptStatistics.shouldIgnoreStatistics(createdBy, type.getPrimitiveTypeName()) && maxEqualsMin) {
+        // The difference from upstream is that all bytes are stored and compared as unsigned bytes
+        // which is valid for all use cases spark will use statistics for
+        if (!CorruptStatistics.shouldIgnoreStatistics(createdBy, type.getPrimitiveTypeName())) {
           if (isSet) {
             statsBuilder.withMin(formatStats.min.array());
             statsBuilder.withMax(formatStats.max.array());
@@ -606,7 +618,7 @@ public class ParquetMetadataConverter {
 
   public org.apache.parquet.column.statistics.Statistics fromParquetStatistics(
       String createdBy, Statistics statistics, PrimitiveType type) {
-    return fromParquetStatisticsInternal(createdBy, statistics, type.getPrimitiveTypeName());
+    return fromParquetStatisticsInternal(createdBy, statistics, type);
   }
 
   public PrimitiveTypeName getPrimitive(Type type) {

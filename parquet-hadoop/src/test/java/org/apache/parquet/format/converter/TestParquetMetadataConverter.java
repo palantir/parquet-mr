@@ -19,20 +19,22 @@
 package org.apache.parquet.format.converter;
 
 import static java.util.Collections.emptyList;
+import static org.apache.parquet.format.CompressionCodec.UNCOMPRESSED;
+import static org.apache.parquet.format.Type.INT32;
+import static org.apache.parquet.format.Util.readPageHeader;
+import static org.apache.parquet.format.Util.writePageHeader;
+import static org.apache.parquet.format.converter.ParquetMetadataConverter.filterFileMetaDataByMidpoint;
 import static org.apache.parquet.format.converter.ParquetMetadataConverter.filterFileMetaDataByStart;
+import static org.apache.parquet.format.converter.ParquetMetadataConverter.getOffset;
 import static org.apache.parquet.schema.MessageTypeParser.parseMessageType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.apache.parquet.format.CompressionCodec.UNCOMPRESSED;
-import static org.apache.parquet.format.Type.INT32;
-import static org.apache.parquet.format.Util.readPageHeader;
-import static org.apache.parquet.format.Util.writePageHeader;
-import static org.apache.parquet.format.converter.ParquetMetadataConverter.filterFileMetaDataByMidpoint;
-import static org.apache.parquet.format.converter.ParquetMetadataConverter.getOffset;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,9 +49,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeSet;
-
-import com.google.common.collect.Sets;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.parquet.Version;
 import org.apache.parquet.bytes.BytesUtils;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -60,37 +59,35 @@ import org.apache.parquet.column.statistics.FloatStatistics;
 import org.apache.parquet.column.statistics.IntStatistics;
 import org.apache.parquet.column.statistics.LongStatistics;
 import org.apache.parquet.column.statistics.Statistics;
+import org.apache.parquet.example.Paper;
+import org.apache.parquet.format.ColumnChunk;
+import org.apache.parquet.format.ColumnMetaData;
+import org.apache.parquet.format.ConvertedType;
 import org.apache.parquet.format.DecimalType;
+import org.apache.parquet.format.FieldRepetitionType;
+import org.apache.parquet.format.FileMetaData;
 import org.apache.parquet.format.LogicalType;
+import org.apache.parquet.format.PageHeader;
+import org.apache.parquet.format.PageType;
+import org.apache.parquet.format.RowGroup;
+import org.apache.parquet.format.SchemaElement;
+import org.apache.parquet.format.Type;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnPath;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.api.Binary;
-import org.apache.parquet.schema.PrimitiveType;
-import org.apache.parquet.schema.LogicalTypeAnnotation;
-import org.junit.Assert;
-import org.junit.Test;
-import org.apache.parquet.example.Paper;
-import org.apache.parquet.format.ColumnChunk;
-import org.apache.parquet.format.ColumnMetaData;
-import org.apache.parquet.format.ConvertedType;
-import org.apache.parquet.format.FieldRepetitionType;
-import org.apache.parquet.format.FileMetaData;
-import org.apache.parquet.format.PageHeader;
-import org.apache.parquet.format.PageType;
-import org.apache.parquet.format.RowGroup;
-import org.apache.parquet.format.SchemaElement;
-import org.apache.parquet.format.Type;
 import org.apache.parquet.schema.ColumnOrder;
+import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.OriginalType;
+import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName;
 import org.apache.parquet.schema.Type.Repetition;
 import org.apache.parquet.schema.Types;
-
-import com.google.common.collect.Lists;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestParquetMetadataConverter {
 
@@ -423,8 +420,8 @@ public class TestParquetMetadataConverter {
 
     org.apache.parquet.format.Statistics formatStats = helper.toParquetStatistics(stats);
 
-    assertFalse("Min should not be set", formatStats.isSetMin());
-    assertFalse("Max should not be set", formatStats.isSetMax());
+    assertTrue("Min should be set", formatStats.isSetMin());
+    assertTrue("Max should be set", formatStats.isSetMax());
     if (helper == StatsHelper.V2) {
       Assert.assertArrayEquals("Min_value should match", min, formatStats.getMin_value());
       Assert.assertArrayEquals("Max_value should match", max, formatStats.getMax_value());
@@ -629,11 +626,7 @@ public class TestParquetMetadataConverter {
   }
 
   private void testUseStatsWithSignedSortOrder(StatsHelper helper) {
-    // override defaults and use stats that were accumulated using signed order
-    Configuration conf = new Configuration();
-    conf.setBoolean("parquet.strings.signed-min-max.enabled", true);
-
-    ParquetMetadataConverter converter = new ParquetMetadataConverter(conf);
+    ParquetMetadataConverter converter = new ParquetMetadataConverter();
     BinaryStatistics stats = new BinaryStatistics();
     stats.incrementNumNulls();
     stats.updateStats(Binary.fromString("A"));
@@ -707,8 +700,8 @@ public class TestParquetMetadataConverter {
   private void testSkippedV2Stats(PrimitiveType type, Object min, Object max) {
     Statistics<?> stats = createStats(type, min, max);
     org.apache.parquet.format.Statistics statistics = ParquetMetadataConverter.toParquetStatistics(stats);
-    assertFalse(statistics.isSetMin());
-    assertFalse(statistics.isSetMax());
+    assertTrue(statistics.isSetMin());
+    assertTrue(statistics.isSetMax());
     assertFalse(statistics.isSetMin_value());
     assertFalse(statistics.isSetMax_value());
   }
@@ -740,8 +733,8 @@ public class TestParquetMetadataConverter {
   private void testV2OnlyStats(PrimitiveType type, Object min, Object max) {
     Statistics<?> stats = createStats(type, min, max);
     org.apache.parquet.format.Statistics statistics = ParquetMetadataConverter.toParquetStatistics(stats);
-    assertFalse(statistics.isSetMin());
-    assertFalse(statistics.isSetMax());
+    assertTrue(statistics.isSetMin());
+    assertTrue(statistics.isSetMax());
     assertEquals(ByteBuffer.wrap(stats.getMinBytes()), statistics.min_value);
     assertEquals(ByteBuffer.wrap(stats.getMaxBytes()), statistics.max_value);
   }

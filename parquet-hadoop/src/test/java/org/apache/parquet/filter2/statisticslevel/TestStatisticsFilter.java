@@ -102,6 +102,7 @@ public class TestStatisticsFilter {
   private static final org.apache.parquet.column.statistics.Statistics<?> emptyIntStats = org.apache.parquet.column.statistics.Statistics
       .getBuilderForReading(Types.required(PrimitiveTypeName.INT32).named("test_int32")).build();
   private static final DoubleStatistics doubleStats = new DoubleStatistics();
+  private static final BinaryStatistics binaryStats = new BinaryStatistics();
   private static final org.apache.parquet.column.statistics.Statistics<?> missingMinMaxDoubleStats = org.apache.parquet.column.statistics.Statistics
       .getBuilderForReading(Types.required(PrimitiveTypeName.DOUBLE).named("test_double")).withNumNulls(100).build();
 

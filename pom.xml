@@ -57,6 +57,30 @@
       <name>Jitpack.io repository</name>
       <!-- needed for brotli-codec -->
     </repository>
+    <repository>
+      <id>palantir</id>
+      <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
+      <name>Palantir Maven Repository</name>
+      <url>http://dl.bintray.com/palantir/releases</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>central</id>
+      <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
+      <name>Maven Repository</name>
+      <url>https://repo.maven.apache.org/maven2</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
   </repositories>
 
   <developers>
@@ -70,7 +94,7 @@
     <targetJavaVersion>1.8</targetJavaVersion>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>${targetJavaVersion}</maven.compiler.target>
-    <maven.version>3.5.3</maven.version>
+    <maven.version>3.5.4</maven.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <github.global.server>github</github.global.server>
     <maven-jar-plugin.version>2.4</maven-jar-plugin.version>
@@ -114,33 +138,6 @@
       <url>https://api.bintray.com/maven/palantir/releases/spark/</url>
     </repository>
   </distributionManagement>
-
-  <repositories>
-    <repository>
-      <id>palantir</id>
-      <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
-      <name>Palantir Maven Repository</name>
-      <url>http://dl.bintray.com/palantir/releases</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-    <repository>
-      <id>central</id>
-      <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
-      <name>Maven Repository</name>
-      <url>https://repo.maven.apache.org/maven2</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 
   <modules>
     <module>parquet-arrow</module>

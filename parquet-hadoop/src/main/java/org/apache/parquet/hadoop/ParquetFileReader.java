@@ -508,7 +508,7 @@ public class ParquetFileReader implements Closeable {
   }
 
   private static final ParquetMetadata readFooter(InputFile file, ParquetReadOptions options, SeekableInputStream f) throws IOException {
-    ParquetMetadataConverter converter = new ParquetMetadataConverter(options);
+    ParquetMetadataConverter converter = new ParquetMetadataConverter();
     return readFooter(file, options, f, converter);
   }
 
@@ -643,7 +643,7 @@ public class ParquetFileReader implements Closeable {
   public ParquetFileReader(
       Configuration configuration, FileMetaData fileMetaData,
       Path filePath, List<BlockMetaData> blocks, List<ColumnDescriptor> columns) throws IOException {
-    this.converter = new ParquetMetadataConverter(configuration);
+    this.converter = new ParquetMetadataConverter();
     this.file = HadoopInputFile.fromPath(filePath, configuration);
     this.fileMetaData = fileMetaData;
     this.f = file.newStream();
@@ -676,7 +676,7 @@ public class ParquetFileReader implements Closeable {
    */
   @Deprecated
   public ParquetFileReader(Configuration conf, Path file, ParquetMetadata footer) throws IOException {
-    this.converter = new ParquetMetadataConverter(conf);
+    this.converter = new ParquetMetadataConverter();
     this.file = HadoopInputFile.fromPath(file, conf);
     this.f = this.file.newStream();
     this.options = HadoopReadOptions.builder(conf).build();
@@ -689,40 +689,16 @@ public class ParquetFileReader implements Closeable {
   }
 
   public ParquetFileReader(InputFile file, ParquetReadOptions options) throws IOException {
-    this.converter = new ParquetMetadataConverter(options);
+    this.converter = new ParquetMetadataConverter();
     this.file = file;
     this.f = file.newStream();
     this.options = options;
     this.footer = readFooter(file, options, f, converter);
     this.fileMetaData = footer.getFileMetaData();
     this.blocks = filterRowGroups(footer.getBlocks());
-    for (ColumnDescriptor col : footer.getFileMetaData().getSchema().getColumns()) {
+    for (ColumnDescriptor col: footer.getFileMetaData().getSchema().getColumns()) {
       paths.put(ColumnPath.get(col.getPath()), col);
     }
-  }
-
-  /**
-   * @param conf the Hadoop Configuration
-   * @param fileStatus FileStatus of a parquet file
-   * @param footer a {@link ParquetMetadata} footer already read from the file
-   * @throws IOException if the file can not be opened
-   */
-  public ParquetFileReader(Configuration conf, FileStatus fileStatus, ParquetMetadata footer) throws IOException {
-    this.converter = new ParquetMetadataConverter();
-    this.conf = conf;
-    FileSystem fs = fileStatus.getPath().getFileSystem(conf);
-    this.fileStatus = fileStatus;
-    this.f = HadoopStreams.wrap(fs.open(fileStatus.getPath()));
-    this.footer = footer;
-    this.fileMetaData = footer.getFileMetaData();
-    this.blocks = footer.getBlocks();
-    for (ColumnDescriptor col : footer.getFileMetaData().getSchema().getColumns()) {
-      paths.put(ColumnPath.get(col.getPath()), col);
-    }
-    // the page size parameter isn't meaningful when only using
-    // the codec factory to get decompressors
-    this.codecFactory = new CodecFactory(conf, 0);
-    this.allocator = new HeapByteBufferAllocator();
   }
 
   public ParquetMetadata getFooter() {
