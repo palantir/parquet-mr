@@ -135,7 +135,7 @@
   <distributionManagement>
     <repository>
       <id>bintray-palantir-release</id>
-      <url>https://api.bintray.com/maven/palantir/releases/spark/</url>
+      <url>https://api.bintray.com/maven/palantir/releases/parquet-mr/;publish=1</url>
     </repository>
   </distributionManagement>
 
@@ -519,6 +519,7 @@
             <exclude>**/dependency-reduced-pom.xml</exclude>
             <exclude>.circleci/config.yml</exclude>
             <exclude>dev/set_version_and_package.sh</exclude>
+            <exclude>settings.xml</exclude>
           </excludes>
         </configuration>
       </plugin>

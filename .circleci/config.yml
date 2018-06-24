@@ -99,10 +99,10 @@ jobs:
       - attach_workspace:
           at: .
       - *restore-maven-dependency-cache
-      - run: echo "<settings><servers><server>" > setttings.xml
-      - run: echo "<id>bintray-palantir-release</id><username>$BINTRAY_USERNAME</username>" >> setttings.xml
-      - run: echo "<password>$BINTRAY_PASSWORD</password>" >> setttings.xml
-      - run: echo "</server></servers></settings>" >> setttings.xml
+      - run: echo "<settings><servers><server>" > settings.xml
+      - run: echo "<id>bintray-palantir-release</id><username>$BINTRAY_USERNAME</username>" >> settings.xml
+      - run: echo "<password>$BINTRAY_PASSWORD</password>" >> settings.xml
+      - run: echo "</server></servers></settings>" >> settings.xml
       - deploy:
           name: Deploy all the things
           command: ./build/mvn -T1C --settings settings.xml -DskipTests deploy
