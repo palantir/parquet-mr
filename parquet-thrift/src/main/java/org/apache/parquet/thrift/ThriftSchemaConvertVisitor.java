@@ -70,8 +70,6 @@ import static org.apache.parquet.schema.Types.primitive;
 /**
  * Visitor Class for converting a thrift definition to parquet message type.
  * Projection can be done by providing a {@link FieldProjectionFilter}
- *
- * @author Tianshuo Deng
  */
 class ThriftSchemaConvertVisitor implements ThriftType.StateVisitor<ConvertedField, ThriftSchemaConvertVisitor.State> {
   private final FieldProjectionFilter fieldProjectionFilter;
@@ -331,7 +329,7 @@ class ThriftSchemaConvertVisitor implements ThriftType.StateVisitor<ConvertedFie
 
   @Override
   public ConvertedField visit(StringType stringType, State state) {
-    return visitPrimitiveType(BINARY, UTF8, state);
+    return stringType.isBinary() ? visitPrimitiveType(BINARY, state) : visitPrimitiveType(BINARY, UTF8, state);
   }
 
   private static boolean isUnion(StructOrUnionType s) {

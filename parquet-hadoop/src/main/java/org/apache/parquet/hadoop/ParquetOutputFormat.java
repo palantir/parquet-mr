@@ -42,6 +42,7 @@ import org.apache.parquet.hadoop.api.WriteSupport.WriteContext;
 import org.apache.parquet.hadoop.codec.CodecConfig;
 import org.apache.parquet.hadoop.metadata.CompressionCodecName;
 import org.apache.parquet.hadoop.util.ConfigurationUtil;
+import org.apache.parquet.hadoop.util.HadoopOutputFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,8 +96,6 @@ import org.slf4j.LoggerFactory;
  * </pre>
  *
  * if none of those is set the data is uncompressed.
- *
- * @author Julien Le Dem
  *
  * @param <T> the type of the materialized records
  */
@@ -318,7 +317,9 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
 
   /**
    * constructor used when this OutputFormat in wrapped in another one (In Pig for example)
+   *
    * @param writeSupport the class used to convert the incoming records
+   * @param <S> the Java write support type
    */
   public <S extends WriteSupport<T>> ParquetOutputFormat(S writeSupport) {
     this.writeSupport = writeSupport;
@@ -327,6 +328,8 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
   /**
    * used when directly using the output format and configuring the write support implementation
    * using parquet.write.support.class
+   *
+   * @param <S> the Java write support type
    */
   public <S extends WriteSupport<T>> ParquetOutputFormat() {
   }
@@ -383,8 +386,8 @@ public class ParquetOutputFormat<T> extends FileOutputFormat<Void, T> {
     }
 
     WriteContext init = writeSupport.init(conf);
-    ParquetFileWriter w = new ParquetFileWriter(
-        conf, init.getSchema(), file, Mode.CREATE, blockSize, maxPaddingSize);
+    ParquetFileWriter w = new ParquetFileWriter(HadoopOutputFile.fromPath(file, conf),
+        init.getSchema(), Mode.CREATE, blockSize, maxPaddingSize);
     w.start();
 
     float maxLoad = conf.getFloat(ParquetOutputFormat.MEMORY_POOL_RATIO,

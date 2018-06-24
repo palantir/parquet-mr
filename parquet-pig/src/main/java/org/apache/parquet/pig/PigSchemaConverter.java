@@ -1,4 +1,4 @@
-/* 
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,15 +49,11 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- *
  * Converts a Pig Schema into a Parquet schema
  *
  * Bags are converted into an optional group containing one repeated group field to preserve distinction between empty bag and null.
  * Map are converted into an optional group containing one repeated group field of (key, value).
  * anonymous fields are named field_{index}. (in most cases pig already gives them an alias val_{int}, so this rarely happens)
- *
- * @author Julien Le Dem
- *
  */
 public class PigSchemaConverter {
   private static final Logger LOG = LoggerFactory.getLogger(PigSchemaConverter.class);
@@ -239,7 +235,8 @@ public class PigSchemaConverter {
       @Override
       public FieldSchema convertINT96(PrimitiveTypeName primitiveTypeName)
           throws FrontendException {
-        throw new FrontendException("NYI");
+        LOG.warn("Converting type " + primitiveTypeName + " to bytearray");
+        return new FieldSchema(fieldName, null, DataType.BYTEARRAY);
       }
 
       @Override
@@ -283,7 +280,7 @@ public class PigSchemaConverter {
         }
         GroupType mapKeyValType = parquetGroupType.getType(0).asGroupType();
         if (!mapKeyValType.isRepetition(Repetition.REPEATED) ||
-            !mapKeyValType.getOriginalType().equals(OriginalType.MAP_KEY_VALUE) ||
+            (mapKeyValType.getOriginalType() != null && !mapKeyValType.getOriginalType().equals(OriginalType.MAP_KEY_VALUE)) ||
             mapKeyValType.getFieldCount()!=2) {
           throw new SchemaConversionException("Invalid map type " + parquetGroupType);
         }

@@ -184,6 +184,8 @@ workflows:
             - build-maven
           <<: *all-branches-and-tags
       - build-maven-versioned:
+          requires:
+            - build-maven
           <<: *deployable-branches-and-tags
       - deploy:
           requires:

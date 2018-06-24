@@ -19,9 +19,6 @@
 package org.apache.parquet.tools.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +27,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 
 import org.apache.parquet.column.ColumnDescriptor;
+import org.apache.parquet.column.statistics.Statistics;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.ColumnChunkMetaData;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
@@ -150,6 +148,12 @@ public class MetadataUtils {
     out.format(" SZ:%d/%d/%.2f", tsize, usize, ratio);
     out.format(" VC:%d", count);
     if (!encodings.isEmpty()) out.format(" ENC:%s", encodings);
+    Statistics<?> stats = meta.getStatistics();
+    if (stats != null) {
+      out.format(" ST:[%s]", stats);
+    } else {
+      out.format(" ST:[none]");
+    }
     out.println();
   }
 
