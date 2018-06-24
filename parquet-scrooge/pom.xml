@@ -26,7 +26,7 @@
 
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>parquet-scrooge_${scala.binary.version}</artifactId>
+  <artifactId>parquet-scrooge_2.10</artifactId>
   <packaging>jar</packaging>
 
   <name>Apache Parquet Scrooge</name>
@@ -38,7 +38,7 @@
       <url>http://conjars.org/repo</url>
     </repository>
   </repositories>
-  
+
   <dependencies>
     <dependency>
       <groupId>org.apache.parquet</groupId>
