@@ -103,9 +103,12 @@ jobs:
       - run: echo "<id>bintray-palantir-release</id><username>$BINTRAY_USERNAME</username>" >> settings.xml
       - run: echo "<password>$BINTRAY_PASSWORD</password>" >> settings.xml
       - run: echo "</server></servers></settings>" >> settings.xml
+      - run:
+          name: Install deployable artifacts in parallel
+          command: ./build/mvn -T1C -DskipTests install
       - deploy:
           name: Deploy all the things
-          command: ./build/mvn -T1C --settings settings.xml -DskipTests deploy
+          command: ./build/mvn --settings settings.xml -DskipTests deploy
 
 workflows:
   version: 2
