@@ -99,13 +99,13 @@ jobs:
       - attach_workspace:
           at: .
       - *restore-maven-dependency-cache
-      - run: echo "user=$BINTRAY_USERNAME" > .credentials
-      - run: echo "password=$BINTRAY_PASSWORD" >> .credentials
-      - run: echo "realm=Bintray API Realm" >> .credentials
-      - run: echo "host=api.bintray.com" >> .credentials
+      - run: echo "<settings><servers><server>" > setttings.xml
+      - run: echo "<id>bintray-palantir-release</id><username>$BINTRAY_USERNAME</username>" >> setttings.xml
+      - run: echo "<password>$BINTRAY_PASSWORD</password>" >> setttings.xml
+      - run: echo "</server></servers></settings>" >> setttings.xml
       - deploy:
           name: Deploy all the things
-          command: ./build/mvn -T1C --settings $tmp_settings -DskipTests deploy
+          command: ./build/mvn -T1C --settings settings.xml -DskipTests deploy
 
 workflows:
   version: 2
