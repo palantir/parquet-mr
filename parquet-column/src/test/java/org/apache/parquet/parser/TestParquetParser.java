@@ -20,6 +20,7 @@ package org.apache.parquet.parser;
 
 import static org.apache.parquet.schema.LogicalTypeAnnotation.TimeUnit.MILLIS;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.intType;
+import static org.apache.parquet.schema.LogicalTypeAnnotation.stringType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.timeType;
 import static org.apache.parquet.schema.LogicalTypeAnnotation.timestampType;
 import static org.junit.Assert.assertEquals;
@@ -47,7 +48,7 @@ import org.apache.parquet.schema.Types.MessageTypeBuilder;
 
 public class TestParquetParser {
   @Test
-  public void testPaperExample() throws Exception {
+  public void testPaperExample() {
     String example =
         "message Document {\n" +
         "  required int64 DocId;\n" +
@@ -119,16 +120,33 @@ public class TestParquetParser {
   }
 
   @Test
-  public void testUTF8Annotation() {
+  public void testSTRINGAnnotation() {
     String message =
         "message StringMessage {\n" +
+        "  required binary string (STRING);\n" +
+        "}\n";
+
+    MessageType parsed = parseMessageType(message);
+    MessageType expected = buildMessage()
+        .required(BINARY).as(stringType()).named("string")
+        .named("StringMessage");
+
+    assertEquals(expected, parsed);
+    MessageType reparsed = parseMessageType(parsed.toString());
+    assertEquals(expected, reparsed);
+  }
+
+  @Test
+  public void testUTF8Annotation() {
+    String message =
+      "message StringMessage {\n" +
         "  required binary string (UTF8);\n" +
         "}\n";
 
     MessageType parsed = parseMessageType(message);
     MessageType expected = buildMessage()
-        .required(BINARY).as(UTF8).named("string")
-        .named("StringMessage");
+      .required(BINARY).as(UTF8).named("string")
+      .named("StringMessage");
 
     assertEquals(expected, parsed);
     MessageType reparsed = parseMessageType(parsed.toString());
@@ -304,14 +322,14 @@ public class TestParquetParser {
   @Test
   public void testIntegerAnnotations() {
     String message = "message IntMessage {" +
-      "  required int32 i8 (INT(8,true));" +
-      "  required int32 i16 (INT(16,true));" +
-      "  required int32 i32 (INT(32,true));" +
-      "  required int64 i64 (INT(64,true));" +
-      "  required int32 u8 (INT(8,false));" +
-      "  required int32 u16 (INT(16,false));" +
-      "  required int32 u32 (INT(32,false));" +
-      "  required int64 u64 (INT(64,false));" +
+      "  required int32 i8 (INTEGER(8,true));" +
+      "  required int32 i16 (INTEGER(16,true));" +
+      "  required int32 i32 (INTEGER(32,true));" +
+      "  required int64 i64 (INTEGER(64,true));" +
+      "  required int32 u8 (INTEGER(8,false));" +
+      "  required int32 u16 (INTEGER(16,false));" +
+      "  required int32 u32 (INTEGER(32,false));" +
+      "  required int64 u64 (INTEGER(64,false));" +
       "}\n";
 
     MessageType parsed = MessageTypeParser.parseMessageType(message);
