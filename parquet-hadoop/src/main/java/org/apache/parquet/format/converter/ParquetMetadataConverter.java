@@ -594,9 +594,6 @@ public class ParquetMetadataConverter {
           statsBuilder.withMin(min);
           statsBuilder.withMax(max);
         }
-        if (formatStats.isSetNull_count()) {
-          statsBuilder.withNumNulls(formatStats.null_count);
-        }
       } else {
         boolean isSet = formatStats.isSetMax() && formatStats.isSetMin();
         // NOTE: See docs in CorruptStatistics for explanation of why this check is needed
@@ -607,10 +604,11 @@ public class ParquetMetadataConverter {
             statsBuilder.withMin(formatStats.min.array());
             statsBuilder.withMax(formatStats.max.array());
           }
-          if (formatStats.isSetNull_count()) {
-            statsBuilder.withNumNulls(formatStats.null_count);
-          }
         }
+      }
+
+      if (formatStats.isSetNull_count()) {
+        statsBuilder.withNumNulls(formatStats.null_count);
       }
     }
     return statsBuilder.build();
