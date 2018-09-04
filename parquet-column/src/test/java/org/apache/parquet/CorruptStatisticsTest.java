@@ -60,10 +60,10 @@ public class CorruptStatisticsTest {
     assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1rc3-SNAPSHOT (build abcd)", PrimitiveTypeName.BINARY));
     assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.8.1 (build abcd)", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("imapla version 1.6.0 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("imapla version 1.10.0 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.9.0 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 2.0.0 (build abcd)", PrimitiveTypeName.BINARY));
-    assertFalse(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.9.0t-01-abcdefg (build abcd)", PrimitiveTypeName.BINARY));
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("imapla version 1.10.0 (build abcd)", PrimitiveTypeName.BINARY));
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.9.0 (build abcd)", PrimitiveTypeName.BINARY));
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 2.0.0 (build abcd)", PrimitiveTypeName.BINARY));
+    assertTrue(CorruptStatistics.shouldIgnoreStatistics("parquet-mr version 1.9.0t-01-abcdefg (build abcd)", PrimitiveTypeName.BINARY));
 
     // missing semver
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("impala version (build abcd)", PrimitiveTypeName.BINARY));
