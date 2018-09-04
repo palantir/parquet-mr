@@ -92,6 +92,11 @@ public class CorruptStatistics {
         return true;
       }
 
+      if (semver.compareTo(CDH_5_PARQUET_251_FIXED_START) >= 0 &&
+        semver.compareTo(CDH_5_PARQUET_251_FIXED_END) < 0) {
+        return false;
+      }
+
       if (semver.compareTo(PARQUET_686_FIXED_VERSION) < 0 && !version.version.contains("palantir")) {
         warnOnce("Ignoring statistics since they didn't come from palantir release of parquet or were from upstream version prior to "
           + PARQUET_686_FIXED_VERSION + ", see PARQUET-686.");
