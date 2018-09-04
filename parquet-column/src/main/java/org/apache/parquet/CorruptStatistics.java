@@ -19,7 +19,6 @@
 package org.apache.parquet;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.parquet.SemanticVersion.SemanticVersionParseException;
 import org.apache.parquet.VersionParser.ParsedVersion;
 import org.apache.parquet.VersionParser.VersionParseException;
@@ -42,7 +41,8 @@ public class CorruptStatistics {
   // the version in which the bug described by jira: PARQUET-251 was fixed
   // the bug involved writing invalid binary statistics, so stats written prior to this
   // fix must be ignored / assumed invalid
-  private static final SemanticVersion PARQUET_251_AND_686_FIXED_VERSION = new SemanticVersion(1, 8, 1);
+  private static final SemanticVersion PARQUET_686_FIXED_VERSION = new SemanticVersion(2, 0, 0);
+  private static final SemanticVersion PARQUET_251_FIXED_VERSION = new SemanticVersion(1, 8, 0);
   private static final SemanticVersion CDH_5_PARQUET_251_FIXED_START = new SemanticVersion(1, 5, 0, null, "cdh5.5.0", null);
   private static final SemanticVersion CDH_5_PARQUET_251_FIXED_END = new SemanticVersion(1, 5, 0);
 
@@ -83,12 +83,23 @@ public class CorruptStatistics {
 
       SemanticVersion semver = SemanticVersion.parse(version.version);
 
-      if (semver.compareTo(PARQUET_251_AND_686_FIXED_VERSION) <= 0 &&
+      if (semver.compareTo(PARQUET_251_FIXED_VERSION) < 0 &&
           !(semver.compareTo(CDH_5_PARQUET_251_FIXED_START) >= 0 &&
               semver.compareTo(CDH_5_PARQUET_251_FIXED_END) < 0)) {
         warnOnce("Ignoring statistics because this file was created prior to "
-            + PARQUET_251_AND_686_FIXED_VERSION
-            + ", see PARQUET-251 and PARQUET-686");
+            + PARQUET_251_FIXED_VERSION
+            + ", see PARQUET-251");
+        return true;
+      }
+
+      if (semver.compareTo(CDH_5_PARQUET_251_FIXED_START) >= 0 &&
+        semver.compareTo(CDH_5_PARQUET_251_FIXED_END) < 0) {
+        return false;
+      }
+
+      if (semver.compareTo(PARQUET_686_FIXED_VERSION) < 0 && !version.version.contains("palantir")) {
+        warnOnce("Ignoring statistics since they didn't come from palantir release of parquet or were from upstream version prior to "
+          + PARQUET_686_FIXED_VERSION + ", see PARQUET-686.");
         return true;
       }
 
