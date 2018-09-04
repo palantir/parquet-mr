@@ -83,7 +83,7 @@ public class CorruptStatistics {
 
       SemanticVersion semver = SemanticVersion.parse(version.version);
 
-      if (semver.compareTo(PARQUET_251_FIXED_VERSION) <= 0 &&
+      if (semver.compareTo(PARQUET_251_FIXED_VERSION) < 0 &&
           !(semver.compareTo(CDH_5_PARQUET_251_FIXED_START) >= 0 &&
               semver.compareTo(CDH_5_PARQUET_251_FIXED_END) < 0)) {
         warnOnce("Ignoring statistics because this file was created prior to "
