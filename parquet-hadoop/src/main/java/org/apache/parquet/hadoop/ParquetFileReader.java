@@ -703,7 +703,7 @@ public class ParquetFileReader implements Closeable {
     }
     this.fileMetaData = footer.getFileMetaData();
     this.blocks = filterRowGroups(footer.getBlocks());
-    for (ColumnDescriptor col: footer.getFileMetaData().getSchema().getColumns()) {
+    for (ColumnDescriptor col : footer.getFileMetaData().getSchema().getColumns()) {
       paths.put(ColumnPath.get(col.getPath()), col);
     }
   }

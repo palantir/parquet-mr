@@ -19,6 +19,7 @@
 package org.apache.parquet;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.parquet.SemanticVersion.SemanticVersionParseException;
 import org.apache.parquet.VersionParser.ParsedVersion;
 import org.apache.parquet.VersionParser.VersionParseException;

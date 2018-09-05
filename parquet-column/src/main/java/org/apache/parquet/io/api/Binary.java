@@ -629,5 +629,4 @@ abstract public class Binary implements Comparable<Binary>, Serializable {
     }
     return true;
   }
-
 }

@@ -197,6 +197,7 @@ We tend to do fairly close readings of pull requests, and you may get a lot of c
 Thank you for getting involved!
 
 ## Authors and contributors
+
 * [Contributors](https://github.com/apache/parquet-mr/graphs/contributors)
 * [Committers](dev/COMMITTERS.md)
 
