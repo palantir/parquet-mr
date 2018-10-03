@@ -75,6 +75,7 @@ public class CorruptStatisticsTest {
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("impala version 1.6.0 (build )", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("impala version 1.6.0 (build)", PrimitiveTypeName.BINARY));
     assertFalse(CorruptStatistics.shouldIgnoreStatistics("impala version (build)", PrimitiveTypeName.BINARY));
+
   }
 
   @Test

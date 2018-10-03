@@ -520,6 +520,7 @@
             <exclude>.circleci/config.yml</exclude>
             <exclude>dev/set_version_and_package.sh</exclude>
             <exclude>settings.xml</exclude>
+            <exclude>FORK.md</exclude>
           </excludes>
         </configuration>
       </plugin>
