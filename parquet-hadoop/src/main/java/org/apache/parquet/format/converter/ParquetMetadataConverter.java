@@ -645,11 +645,7 @@ public class ParquetMetadataConverter {
 
   public org.apache.parquet.column.statistics.Statistics fromParquetStatistics(
       String createdBy, Statistics statistics, PrimitiveType type) {
-//    return fromParquetStatisticsInternal(createdBy, statistics, type);
-    SortOrder expectedOrder = overrideSortOrderToSigned(type) ?
-        SortOrder.SIGNED : sortOrder(type);
-    return fromParquetStatisticsInternal(
-        createdBy, statistics, type, expectedOrder);
+    return fromParquetStatisticsInternal(createdBy, statistics, type);
   }
 
   /**
@@ -688,6 +684,7 @@ public class ParquetMetadataConverter {
     // even if the override is set, only return stats for string-ish types
     // a null type annotation is considered string-ish because some writers
     // failed to use the UTF8 annotation.
+    boolean useSignedStringMinMax = true;
     LogicalTypeAnnotation annotation = type.getLogicalTypeAnnotation();
     return useSignedStringMinMax &&
         PrimitiveTypeName.BINARY == type.getPrimitiveTypeName() &&

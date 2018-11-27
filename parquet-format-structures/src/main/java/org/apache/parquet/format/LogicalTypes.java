@@ -19,10 +19,6 @@
 
 package org.apache.parquet.format;
 
-import java.util.concurrent.TimeUnit;
-import javax.lang.model.type.NullType;
-import sun.jvm.hotspot.debugger.cdbg.EnumType;
-
 /**
  * Convenience instances of logical type classes.
  */

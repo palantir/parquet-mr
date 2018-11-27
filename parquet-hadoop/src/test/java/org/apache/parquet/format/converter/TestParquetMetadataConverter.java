@@ -62,8 +62,6 @@ import org.apache.parquet.column.statistics.FloatStatistics;
 import org.apache.parquet.column.statistics.IntStatistics;
 import org.apache.parquet.column.statistics.LongStatistics;
 import org.apache.parquet.column.statistics.Statistics;
-<<<<<<< HEAD
-=======
 import org.apache.parquet.format.DecimalType;
 import org.apache.parquet.format.LogicalType;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
@@ -81,7 +79,6 @@ import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 import org.junit.Assert;
 import org.junit.Test;
->>>>>>> master
 import org.apache.parquet.example.Paper;
 import org.apache.parquet.format.ColumnChunk;
 import org.apache.parquet.format.ColumnMetaData;
