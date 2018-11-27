@@ -278,7 +278,7 @@ public class ParquetWriter<T> implements Closeable {
     MessageType schema = writeContext.getSchema();
 
     ParquetFileWriter fileWriter = new ParquetFileWriter(
-        file, schema, mode, rowGroupSize, maxPaddingSize);
+        file, schema, mode, rowGroupSize, maxPaddingSize, encodingProps.getColumnIndexTruncateLength());
     fileWriter.start();
 
     this.codecFactory = new CodecFactory(conf, encodingProps.getPageSizeThreshold());
@@ -422,6 +422,17 @@ public class ParquetWriter<T> implements Closeable {
      */
     public SELF withPageSize(int pageSize) {
       encodingPropsBuilder.withPageSize(pageSize);
+      return self();
+    }
+
+    /**
+     * Sets the Parquet format page row count limit used by the constructed writer.
+     *
+     * @param rowCount limit for the number of rows stored in a page
+     * @return this builder for method chaining
+     */
+    public SELF withPageRowCountLimit(int rowCount) {
+      encodingPropsBuilder.withPageRowCountLimit(rowCount);
       return self();
     }
 
