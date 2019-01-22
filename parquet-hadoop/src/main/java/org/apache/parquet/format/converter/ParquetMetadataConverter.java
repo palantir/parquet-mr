@@ -288,6 +288,9 @@ public class ParquetMetadataConverter {
 
     @Override
     public Optional<ConvertedType> visit(LogicalTypeAnnotation.TimeLogicalTypeAnnotation timeLogicalType) {
+      if (!timeLogicalType.isAdjustedToUTC()) {
+        return empty();
+      }
       switch (timeLogicalType.getUnit()) {
         case MILLIS:
           return of(ConvertedType.TIME_MILLIS);
@@ -302,6 +305,9 @@ public class ParquetMetadataConverter {
 
     @Override
     public Optional<ConvertedType> visit(LogicalTypeAnnotation.TimestampLogicalTypeAnnotation timestampLogicalType) {
+      if (!timestampLogicalType.isAdjustedToUTC()) {
+        return empty();
+      }
       switch (timestampLogicalType.getUnit()) {
         case MICROS:
           return of(ConvertedType.TIMESTAMP_MICROS);
@@ -1256,8 +1262,10 @@ public class ParquetMetadataConverter {
         OriginalType newOriginalType = (schemaElement.isSetLogicalType() && getLogicalTypeAnnotation(schemaElement.logicalType) != null) ?
            getLogicalTypeAnnotation(schemaElement.logicalType).toOriginalType() : null;
         if (!originalType.equals(newOriginalType)) {
-          LOG.warn("Converted type and logical type metadata mismatch (convertedType: {}, logical type: {}). Using value in converted type.",
-            schemaElement.converted_type, schemaElement.logicalType);
+          if (newOriginalType != null) {
+            LOG.warn("Converted type and logical type metadata mismatch (convertedType: {}, logical type: {}). Using value in converted type.",
+              schemaElement.converted_type, schemaElement.logicalType);
+          }
           childBuilder.as(originalType);
         }
       }
