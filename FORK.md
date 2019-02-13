@@ -2,7 +2,7 @@
 This repo exists mostly to make releases of parquet-mr more often. The only difference to upstream is as follows:
 
 1. Solution for [PARQUET-686](https://issues.apache.org/jira/browse/PARQUET-686).
-2. Temporarily revert PARQUET-1414 because it causes Spark to write unreadable empty Parquet pages.
+2. Temporarily revert [PARQUET-1414](https://issues.apache.org/jira/browse/PARQUET-1414) because it causes Spark to write unreadable empty Parquet pages.
 
 The change that we had made that upstream only made in statistics v2 is to change binary comparison to be unsigned and declare all statistics priori to that change as corrupted. This lets us more quickly take advantage of binary statistics and removes burden on user to know whether they should account for signed binary comparison in their values.
 
