@@ -200,7 +200,7 @@ abstract class ColumnWriteStoreBase implements ColumnWriteStore {
         writer.writePage();
         remainingMem = props.getPageSizeThreshold();
       } else {
-        rowCountForNextRowCountCheck = min(rowCountForNextRowCountCheck, writer.getRowsWrittenSoFar() + pageRowCountLimit);
+        rowCountForNextRowCountCheck = min(rowCountForNextRowCountCheck, rowCount + (pageRowCountLimit - rows));
       }
       long rowsToFillPage =
           usedMem == 0 ?
