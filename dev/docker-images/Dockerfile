@@ -99,10 +99,10 @@ RUN groupadd --gid 3434 circleci \
 
 SHELL ["/bin/bash", "-eux", "-o", "pipefail", "-c"]
 
-RUN THRIFT_URL="http://archive.apache.org/dist/thrift/0.9.3/thrift-0.9.3.tar.gz" \
+RUN THRIFT_URL="http://archive.apache.org/dist/thrift/0.12.0/thrift-0.12.0.tar.gz" \
   && curl --silent --show-error --location --fail --retry 3 --output /tmp/thrift.tar.gz $THRIFT_URL \
   && tar -C /tmp -xzvf /tmp/thrift.tar.gz \
-  && cd /tmp/thrift-0.9.3 \
+  && cd /tmp/thrift-0.12.0 \
   && chmod +x ./configure \
   && ./configure --disable-gen-erl --disable-gen-hs --without-ruby --without-haskell --without-erlang --without-python \
   && make install \
