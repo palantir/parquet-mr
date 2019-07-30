@@ -340,7 +340,7 @@ public class CheckParquet251Command extends BaseCommand {
         column.consume();
       }
 
-      if (numNulls != stats.getNumNulls()) {
+      if (stats.isNumNullsSet() && numNulls != stats.getNumNulls()) {
         throw new BadStatsException("Number of nulls doesn't match.");
       }
 
