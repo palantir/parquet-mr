@@ -852,7 +852,11 @@ public class ParquetFileReader implements Closeable {
       consecutiveChunks.readAll(f, builder);
     }
     for (Chunk chunk : builder.build()) {
-      currentRowGroup.addColumn(chunk.descriptor.col, chunk.readAllPages());
+      try {
+        currentRowGroup.addColumn(chunk.descriptor.col, chunk.readAllPages());
+      } catch (IOException e) {
+        throw new IOException("error reading file: " + getFile(), e);
+      }
     }
 
     // avoid re-reading bytes the dictionary reader is used after this call
